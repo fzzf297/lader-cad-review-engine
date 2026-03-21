@@ -6,7 +6,6 @@ const router = useRouter()
 const navItems = [
   { path: '/', label: '首页' },
   { path: '/upload', label: '上传文件' },
-  { path: '/validation', label: '合同验证' },
   { path: '/history', label: '历史记录' }
 ]
 </script>
@@ -14,7 +13,7 @@ const navItems = [
 <template>
   <header class="app-header">
     <div class="logo">
-      <h1>DWG 施工图审核系统</h1>
+      <h1>CAD 图纸审核引擎</h1>
     </div>
     <nav class="nav-menu">
       <router-link

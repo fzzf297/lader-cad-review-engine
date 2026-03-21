@@ -10,14 +10,14 @@ const features = [
     icon: '📄'
   },
   {
-    title: '合同分析',
-    description: '支持 Word/PDF 合同文件解析，自动提取工作项、关键条款',
-    icon: '📋'
+    title: '图元统计分析',
+    description: '快速提取图层、图块、实体和门窗摘要，方便定位图纸结构与关键内容',
+    icon: '📊'
   },
   {
-    title: '合同-图纸比对',
-    description: '将合同约定与图纸内容进行关联比对，发现差异',
-    icon: '🔗'
+    title: '异步任务审核',
+    description: '默认走任务队列执行审核，大文件场景下也能持续查看进度与结果',
+    icon: '⏱️'
   },
   {
     title: 'LLM 辅助审核',
@@ -34,8 +34,8 @@ const goToUpload = () => {
 <template>
   <div class="home-view">
     <div class="hero">
-      <h1>DWG 施工图审核系统</h1>
-      <p class="subtitle">基于 GB/T 50001-2017 标准，提供智能化的施工图审核解决方案</p>
+      <h1>CAD 图纸审核引擎</h1>
+      <p class="subtitle">面向 DXF 图纸解析、规则审核与结果追踪的轻量化审核平台</p>
       <el-button type="primary" size="large" @click="goToUpload">
         开始审核
       </el-button>

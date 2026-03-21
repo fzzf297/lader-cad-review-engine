@@ -1,17 +1,16 @@
-# DWG 施工图审核系统
+# CAD 图纸审核引擎
 
-一个面向单机部署和 Docker 部署的 DXF + 合同综合审核系统，支持：
+一个面向单机部署和 Docker 部署的 CAD 图纸审核项目，当前聚焦 DXF 图纸解析与审核，支持：
 
 - DXF 解析、图层/图块/实体统计、门窗摘要提取
-- 基于规则引擎的施工图规范审核
+- 基于规则引擎的图纸规范审核
 - 可选 LLM 增强审核
-- 合同解析与合同-图纸比对
 - 审核历史、统计、JSON/PDF 报告下载
 - 同步审核与异步任务审核两套入口
 
 ## 当前状态
 
-- 后端主路径已收口：上传、审核、验证、历史都使用统一文件注册表
+- 后端主路径已收口：上传、审核、历史都使用统一文件注册表
 - 文件元数据默认持久化到 `${UPLOAD_DIR}/index.json`
 - 审核历史默认落到 `${UPLOAD_DIR}/history/`
 - 数据库已接入为主存储优先项；数据库不可用时会回退到 JSON 存储
@@ -24,7 +23,6 @@
 | 后端框架 | FastAPI + Python 3.10+ |
 | 图纸解析 | ezdxf |
 | 图纸输入 | DXF |
-| 合同解析 | python-docx + pdfplumber |
 | 前端框架 | Vue 3 + TypeScript + Vite + Element Plus |
 | 数据存储 | PostgreSQL 或 SQLite + 文件系统 + JSON 回退 |
 | 异步任务 | Celery + Redis |
@@ -36,9 +34,9 @@
 cad/
 ├── backend/
 │   ├── app/
-│   │   ├── api/v1/              # upload/review/tasks/validate/parse
+│   │   ├── api/v1/              # upload/review/tasks/parse
 │   │   ├── db/                  # SQLAlchemy 模型与数据库连接
-│   │   ├── parsers/             # DXF / 合同解析
+│   │   ├── parsers/             # DXF 解析
 │   │   ├── rules/               # 规则引擎
 │   │   ├── services/            # review/file_registry/history/database_gateway
 │   │   ├── tasks/               # Celery 任务
@@ -102,8 +100,7 @@ Docker 编排会启动：
 ### 1. 上传
 
 - `POST /api/v1/upload/dwg`（当前仅接受 `.dxf` 文件）
-- `POST /api/v1/upload/contract`
-- `GET /api/v1/upload/list?file_type=dwg|contract`
+- `GET /api/v1/upload/list?file_type=dwg`
 - `GET /api/v1/upload/{file_id}`
 
 上传后的文件元数据会写入 `${UPLOAD_DIR}/index.json`，服务重启后仍可继续审核、验证和历史追踪。当前版本会直接拒绝 `.dwg` 上传，避免后续审核阶段失败。
@@ -115,7 +112,6 @@ Docker 编排会启动：
 支持参数：
 
 - `dwg_file_id`
-- `contract_file_id`
 - `enable_llm`
 - `rule_codes`
 
@@ -123,9 +119,6 @@ Docker 编排会启动：
 
 - `dwg_review`
 - `dwg_analysis`
-- `contract_analysis`
-- `contract_dwg_comparison`
-
 ### 3. 异步审核
 
 - `POST /api/v1/tasks`
@@ -150,7 +143,7 @@ Docker 编排会启动：
 - 上传文件元数据：`${UPLOAD_DIR}/index.json`
 - 审核历史索引：`${UPLOAD_DIR}/history/index.json`
 - 审核完整结果：`${UPLOAD_DIR}/history/{record_id}.json`
-- 数据库可用时，同步写入 `dwg_files`、`contract_files`、`review_records`、`review_issues`
+- 数据库可用时，同步写入 `dwg_files`、`review_records`、`review_issues`
 
 ### 历史 JSON 回填数据库
 

@@ -17,10 +17,8 @@
   - 同步审核、历史记录、统计、报告
 - `app/api/v1/tasks.py`
   - 异步任务创建、进度查询、结果查询
-- `app/api/v1/validate.py`
-  - 合同-图纸验证
 - `app/services/review_service.py`
-  - 图纸审核、合同分析、结果融合、比对总编排
+  - 图纸审核主编排与结果构建
 - `app/services/file_registry.py`
   - 上传文件元数据注册表
 - `app/services/history_storage.py`
@@ -41,25 +39,21 @@
 涉及的数据库表：
 
 - `dwg_files`
-- `contract_files`
 - `review_records`
 - `review_issues`
 
 ## 前端页面
 
 - `UploadView.vue`
-  - 上传 DXF 和合同文件，进入审核流程
+  - 上传 DXF 文件，进入审核流程
 - `ReviewView.vue`
   - 默认发起异步任务，轮询进度，显示审核详情
-- `ValidationView.vue`
-  - 从真实上传文件列表中选择合同和图纸进行验证
 - `HistoryView.vue`
   - 展示历史记录列表，并读取详情接口
 
 ## 关键 API
 
 - `POST /api/v1/upload/dwg`
-- `POST /api/v1/upload/contract`
 - `GET /api/v1/upload/list`
 - `POST /api/v1/review`
 - `POST /api/v1/tasks`
