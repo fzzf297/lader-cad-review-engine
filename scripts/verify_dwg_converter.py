@@ -39,7 +39,6 @@ def test_dwg_conversion():
     # 查找测试文件
     test_files = [
         Path(__file__).parent.parent / "backend" / "tests" / "fixtures" / "test.dwg",
-        Path(__file__).parent.parent / "test.dwg",
         Path.cwd() / "test.dwg",
     ]
 
@@ -51,7 +50,7 @@ def test_dwg_conversion():
 
     if not dwg_file:
         print("⚠️  未找到测试 DWG 文件")
-        print("   请放置一个 test.dwg 文件在项目根目录")
+        print("   请放置一个 test.dwg 文件在 backend/tests/fixtures/ 下")
         return None
 
     print(f"   测试文件: {dwg_file}")

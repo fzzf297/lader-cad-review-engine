@@ -7,7 +7,7 @@ import json
 from pathlib import Path
 
 # 添加 backend 到路径
-backend_path = str(Path(__file__).parent / "backend")
+backend_path = str(Path(__file__).parent.parent.parent / "backend")
 sys.path.insert(0, backend_path)
 
 print(f"Python path: {sys.path}")

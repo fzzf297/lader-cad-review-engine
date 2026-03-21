@@ -1,7 +1,7 @@
 [project]
-name = "dwg-review-backend"
+name = "cad-review-engine-backend"
 version = "1.0.0"
-description = "DWG 施工图审核系统后端"
+description = "CAD 图纸审核引擎后端"
 requires-python = ">=3.10"
 dependencies = [
     "fastapi>=0.109.0",

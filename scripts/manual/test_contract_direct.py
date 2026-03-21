@@ -6,7 +6,7 @@ import asyncio
 from pathlib import Path
 
 # 添加 backend 到路径
-sys.path.insert(0, str(Path(__file__).parent / "backend"))
+sys.path.insert(0, str(Path(__file__).parent.parent.parent / "backend"))
 
 from app.parsers.contract_parser import ContractParser
 from app.services.review_service import ContractAnalysisService

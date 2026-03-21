@@ -6,7 +6,7 @@ import asyncio
 from pathlib import Path
 from datetime import datetime
 
-sys.path.insert(0, str(Path(__file__).parent / "backend"))
+sys.path.insert(0, str(Path(__file__).parent.parent.parent / "backend"))
 
 from app.utils.dwg_converter import DWGConverter
 
