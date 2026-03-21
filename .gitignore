@@ -6,6 +6,7 @@ __pycache__/
 .pytest_cache/
 .coverage
 htmlcov/
+.egg-info/
 .venv/
 venv/
 
@@ -21,3 +22,7 @@ frontend/dist/
 
 # Runtime data
 uploads/
+
+# Vendored build sources
+tools/libredwg/libredwg-0.13.3/
+tools/libredwg/*.tar.gz
