@@ -1,0 +1,58 @@
+# Docker ignore file for Backend
+# Exclude files not needed in Docker image
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+dist/
+build/
+*.egg
+
+# Virtual environments
+venv/
+.venv/
+env/
+.env
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.nox/
+
+# Git
+.git/
+.gitignore
+
+# Docker
+Dockerfile
+docker-compose*.yml
+.dockerignore
+
+# Documentation
+*.md
+docs/
+
+# Local development files
+.env.local
+.env.*.local
+*.log
+
+# Uploads (mounted as volume)
+uploads/
+
+# Misc
+.DS_Store
+Thumbs.db
