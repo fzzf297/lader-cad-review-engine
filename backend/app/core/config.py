@@ -22,10 +22,7 @@ class Settings(BaseSettings):
     # 文件存储配置
     UPLOAD_DIR: str = "./uploads"
     MAX_FILE_SIZE: int = 100 * 1024 * 1024  # 100MB
-    ALLOWED_EXTENSIONS: set = {".dwg", ".dxf", ".doc", ".docx", ".pdf"}
-
-    # ODA File Converter 配置
-    ODA_CONVERTER_PATH: str = "/usr/bin/ODAFileConverter"
+    ALLOWED_EXTENSIONS: set = {".dxf", ".doc", ".docx", ".pdf"}
 
     # 千问 API 配置
     QWEN_API_KEY: str = ""

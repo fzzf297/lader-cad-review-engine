@@ -68,42 +68,20 @@ docker-compose logs -f backend
 docker-compose down
 ```
 
-**注意**: Docker 镜像已预装 LibreDWG，无需额外安装 DWG 转换工具。
-
 ## 部署说明
 
 ### Docker 部署（推荐）
 
-Docker 镜像已预装 LibreDWG，用户部署时无需额外操作：
+当前主审核链路是 DXF 直传，Docker 部署无需额外准备 DWG 转换工具：
 
 ```bash
 # 构建并启动所有服务
 docker-compose up -d
-
-# 验证 LibreDWG 安装
-docker-compose exec backend dwg2dxf --version
 ```
 
 ### 非 Docker 部署
 
-如果不在 Docker 中运行，需要手动安装 DWG 转换工具之一：
-
-1. **ODA File Converter**（推荐，转换质量更好）
-   - 下载：https://www.opendesign.com/guestfiles/oda_file_converter
-   - 安装后设置环境变量：`ODA_CONVERTER_PATH=/path/to/ODAFileConverter`
-
-2. **LibreDWG**
-   - Ubuntu/Debian: `sudo apt-get install libredwg-tools`
-   - macOS: `brew install libredwg`
-
-### DWG 转换配置
-
-通过环境变量配置转换行为：
-
-| 变量 | 说明 | 默认值 |
-|------|------|--------|
-| `DWG_CONVERTER_MODE` | 转换模式: `local` 或 `api` | `local` |
-| `ODA_CONVERTER_PATH` | ODA File Converter 路径 | `/usr/bin/ODAFileConverter` |
+非 Docker 部署同样以 DXF 直传为主，不需要额外安装 DWG 转换工具。
 
 ## Architecture
 
@@ -133,7 +111,6 @@ backend/app/
 │   └── review_tasks.py  # Background review tasks
 ├── db/                  # Database models
 └── utils/               # Utilities
-    └── dwg_converter.py # DWG to DXF conversion
 ```
 
 ### Frontend Structure
@@ -154,7 +131,7 @@ frontend/src/
 
 ### Key Data Flow
 
-1. **File Upload**: `POST /api/v1/upload` → DWG conversion → store in uploads/
+1. **File Upload**: `POST /api/v1/upload/dwg` → 接收 DXF → 写入临时目录并登记元数据
 2. **Review**: `POST /api/v1/review` → DXF parsing → Rule engine + LLM → Result merger
 3. **Contract Analysis**: Contract parsing → LLM extraction → Work items
 4. **Contract-DWG Matching**: Work items ↔ Block statistics → Compliance score
@@ -169,16 +146,6 @@ The rule engine (`app/rules/engine.py`) implements GB/T 50001-2017 compliance ch
 - `DIM_001`: Dimension style consistency
 
 Rules can be extended by creating a class that inherits from `BaseRule` and registering it with `ReviewEngine`.
-
-### DWG Conversion
-
-The `DWGConverter` class supports multiple converters (in priority order):
-1. **ODA File Converter** (recommended if available)
-2. **LibreDWG** (dwg2dxf command, built into Docker image)
-
-The converter auto-detects available tools at startup. When using Docker, LibreDWG is pre-installed and ready to use. If neither is installed, DWG uploads will fail with an appropriate error message.
-
-**Docker 部署提示**: Docker 镜像已预装 LibreDWG (`libredwg-tools` 包)，部署后即可直接使用 DWG 转换功能，无需额外安装。
 
 ### DXF Analysis Best Practices
 
@@ -296,8 +263,6 @@ Configuration is managed via environment variables in `backend/.env`:
 | `UPLOAD_DIR` | File storage directory | `./uploads` |
 | `QWEN_API_KEY` | Alibaba Qwen API key | (required for LLM) |
 | `LLM_ENABLED` | Enable LLM review | `false` |
-| `DWG_CONVERTER_MODE` | DWG converter mode: `local` or `api` | `local` |
-
 ## API Endpoints
 
 - `GET /` - API info

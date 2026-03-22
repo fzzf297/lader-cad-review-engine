@@ -98,7 +98,7 @@ def analyze_matching():
     print("-" * 80)
     print("""
   1. 优化 DWG 解析:
-     - 升级 LibreDWG 或使用 ODA File Converter
+     - 优先直接获取稳定 DXF 输入
      - 处理中文编码问题
      - 增加 DXF 损坏文件的恢复能力
 

@@ -8,7 +8,6 @@ import logging
 
 from app.core.config import settings
 from app.api.v1.router import api_router
-from app.utils.dwg_converter import get_converter
 
 # 配置日志
 logging.basicConfig(
@@ -28,13 +27,6 @@ async def lifespan(app: FastAPI):
     # 创建上传目录
     from pathlib import Path
     Path(settings.UPLOAD_DIR).mkdir(parents=True, exist_ok=True)
-
-    # 检查 DWG 转换器
-    converter = get_converter()
-    if converter.is_available():
-        logger.info(f"DWG 转换器已就绪: {converter.converter_type}")
-    else:
-        logger.warning("DWG 转换器未安装，DWG 文件将无法转换")
 
     yield
 

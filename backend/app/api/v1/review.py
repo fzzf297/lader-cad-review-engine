@@ -116,8 +116,7 @@ async def create_review(request: ReviewRequest):
         raise HTTPException(
             400,
             "DWG 文件未能自动转换为 DXF 格式。"
-            "\n请安装 ODA File Converter 或 LibreDWG 后重试，"
-            "或手动将 DWG 转换为 DXF 格式后上传。"
+            "\n请先手动将 DWG 转换为 DXF 格式后再上传。"
         )
 
     # 创建审核服务

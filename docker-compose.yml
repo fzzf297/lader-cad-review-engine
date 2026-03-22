@@ -54,11 +54,9 @@ services:
       - REDIS_URL=redis://redis:6379/0
       - UPLOAD_DIR=/app/uploads
       - MAX_FILE_SIZE=${MAX_FILE_SIZE:-104857600}
-      - ODA_CONVERTER_PATH=${ODA_CONVERTER_PATH:-/usr/bin/ODAFileConverter}
       - QWEN_API_KEY=${QWEN_API_KEY:-}
       - QWEN_MODEL=${QWEN_MODEL:-qwen-plus}
       - LLM_ENABLED=${LLM_ENABLED:-false}
-      - DWG_CONVERTER_MODE=${DWG_CONVERTER_MODE:-local}
     volumes:
       - uploads:/app/uploads
     ports:

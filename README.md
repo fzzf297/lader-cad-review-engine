@@ -40,7 +40,7 @@ cad/
 │   │   ├── rules/               # 规则引擎
 │   │   ├── services/            # review/file_registry/history/database_gateway
 │   │   ├── tasks/               # Celery 任务
-│   │   └── utils/               # DWG 转换等工具
+│   │   └── utils/               # 通用工具
 │   ├── migrations/              # Alembic 迁移
 │   ├── scripts/                 # 数据导入脚本
 │   └── tests/
@@ -67,11 +67,10 @@ npm install
 npm run dev
 ```
 
-当前默认审核链路是 DXF 直传，不依赖本地 DWG 转换器。
+当前默认审核链路是 DXF 直传。
 
 - `POST /api/v1/upload/dwg` 这个接口名称目前保留，但当前只接受 `.dxf`
 - `.dwg` 文件会被直接拒绝，避免出现“上传成功但审核阶段失败”的误导体验
-- 仓库已经不再内置 `LibreDWG` 可执行文件；如果你要做手动 DWG 转 DXF，或后续恢复 DWG 直传能力，需要自行在系统里安装转换器
 
 ### Docker
 
@@ -87,27 +86,6 @@ Docker 编排会启动：
 - `postgres`
 - `redis`
 
-当前 Docker 镜像仍预装 `LibreDWG`，主要用于部署环境兜底和手动转换排查；主审核链路仍建议直接上传 DXF。
-
-## DWG 转换依赖
-
-当前项目的稳定审核入口是 DXF，因此大多数本地开发和联调场景都不需要安装 DWG 转换器。
-
-只有在以下情况才需要本地准备转换器：
-
-- 你要在机器上手动把 `.dwg` 转成 `.dxf`
-- 你准备恢复或调试 DWG 直传能力
-- 你要排查 Docker 之外的 DWG 转换问题
-
-可选的系统级转换器如下：
-
-1. `ODA File Converter`
-   推荐，转换质量通常更好。安装后可通过 `ODA_CONVERTER_PATH` 指定路径。
-2. `LibreDWG`
-   需要系统里存在 `dwg2dxf` 命令，例如 macOS 上可通过 `brew install libredwg` 安装。
-
-仓库当前不再自带任何本地 `LibreDWG` runtime，因此文档里的“可直接开箱即用 DWG 转换”只适用于 Docker 镜像，不适用于裸机源码目录。
-
 ## 环境变量
 
 后端核心环境变量位于 `backend/.env`，常用项如下：
@@ -119,8 +97,6 @@ Docker 编排会启动：
 | `REDIS_URL` | Redis 地址 | `redis://localhost:6379/0` |
 | `UPLOAD_DIR` | 上传目录 | `./uploads` |
 | `LLM_ENABLED` | 是否启用 LLM | `false` |
-| `DWG_CONVERTER_MODE` | DWG 转换模式，仅在启用 DWG 转换链路时生效 | `local` |
-| `ODA_CONVERTER_PATH` | ODA 路径，仅在使用 ODA 转换 DWG 时生效 | `/usr/bin/ODAFileConverter` |
 
 ## 运行方式
 
