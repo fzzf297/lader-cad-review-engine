@@ -4,12 +4,10 @@ DWG 到 DXF 转换器
 支持的转换方式：
 1. ODA File Converter (推荐)
 2. LibreDWG (dwg2dxf 命令)
-3. Python 在线转换服务 (备选)
 """
 import subprocess
 import shutil
 import logging
-import tempfile
 import os
 from pathlib import Path
 from typing import Optional, Tuple
@@ -46,12 +44,6 @@ class DWGConverter:
         if shutil.which("dwg2dxf"):
             logger.info("找到 LibreDWG (dwg2dxf)")
             return "dwg2dxf"
-
-        # 3. 检查项目本地安装的 LibreDWG
-        project_libredwg = Path(__file__).parent.parent.parent.parent / "tools" / "libredwg" / "install" / "bin" / "dwg2dxf"
-        if project_libredwg.exists():
-            logger.info(f"找到项目本地 LibreDWG: {project_libredwg}")
-            return str(project_libredwg)
 
         logger.warning("未找到 DWG 转换器")
         return None
