@@ -31,11 +31,15 @@ class TestFileRegistry:
 
     def test_list_sorted_and_filtered(self, tmp_path):
         registry = get_file_registry(str(tmp_path / "index.json"))
+        contract_file = tmp_path / "contract.pdf"
+        dwg_file = tmp_path / "drawing.dxf"
+        contract_file.write_text("pdf")
+        dwg_file.write_text("dxf")
         registry.register(FileRecord(
             file_id="contract-1",
             filename="contract.pdf",
             file_type="contract",
-            file_path="/tmp/contract.pdf",
+            file_path=str(contract_file),
             suffix=".pdf",
             uploaded_at="2026-03-18T09:00:00",
         ))
@@ -43,7 +47,7 @@ class TestFileRegistry:
             file_id="dwg-1",
             filename="drawing.dxf",
             file_type="dwg",
-            file_path="/tmp/drawing.dxf",
+            file_path=str(dwg_file),
             suffix=".dxf",
             uploaded_at="2026-03-18T11:00:00",
         ))
@@ -69,3 +73,21 @@ class TestFileRegistry:
 
         reloaded = get_file_registry(str(storage_path))
         assert reloaded.get("dwg-1") is not None
+
+    def test_mark_consumed_removes_file_and_hides_from_list(self, tmp_path):
+        registry = get_file_registry(str(tmp_path / "index.json"))
+        upload_file = tmp_path / "drawing.dxf"
+        upload_file.write_text("dxf")
+
+        registry.register(FileRecord(
+            file_id="dwg-1",
+            filename="drawing.dxf",
+            file_type="dwg",
+            file_path=str(upload_file),
+            suffix=".dxf",
+            uploaded_at="2026-03-18T12:00:00",
+        ))
+
+        assert registry.mark_consumed("dwg-1", remove_file=True) is True
+        assert not upload_file.exists()
+        assert registry.list() == []

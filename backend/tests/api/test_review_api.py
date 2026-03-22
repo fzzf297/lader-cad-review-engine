@@ -144,7 +144,8 @@ class TestReviewAPI:
 
             with patch('app.api.v1.review.get_uploaded_file') as mock_get_file, \
                  patch('app.api.v1.review.FullReviewService') as mock_service_cls, \
-                 patch('app.api.v1.review.get_history_storage') as mock_history:
+                 patch('app.api.v1.review.get_history_storage') as mock_history, \
+                 patch('app.api.v1.review.get_file_registry') as mock_registry:
                 mock_get_file.return_value = dwg_record
                 mock_service = mock_service_cls.return_value
                 mock_service.full_review = AsyncMock(return_value=review_result)
@@ -160,6 +161,7 @@ class TestReviewAPI:
             assert data["dwg_analysis"]["file_info"]["filename"] == "drawing.dxf"
             mock_service.full_review.assert_awaited_once()
             assert mock_service.full_review.await_args.kwargs["rule_codes"] == ["TEXT_001"]
+            mock_registry.return_value.mark_consumed.assert_called_once_with("dwg-1", remove_file=True)
 
 
 class TestHistoryAPI:

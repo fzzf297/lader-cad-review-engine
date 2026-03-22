@@ -134,6 +134,27 @@ class DatabaseGateway:
         records.sort(key=lambda record: record.uploaded_at, reverse=True)
         return records
 
+    async def mark_file_consumed(self, file_id: str) -> bool:
+        if not await self._ensure_db():
+            return False
+
+        async with AsyncSessionLocal() as session:
+            for model_cls in (DbDWGFile, DbContractFile):
+                db_record = await session.get(model_cls, file_id)
+                if db_record is None:
+                    continue
+
+                db_record.file_path = ""
+                db_record.original_path = None
+                db_record.file_size = 0
+                if hasattr(db_record, "status"):
+                    db_record.status = FileStatus.REVIEWED
+
+                await session.commit()
+                return True
+
+        return False
+
     async def save_review_record(self, record) -> bool:
         if not await self._ensure_db():
             return False

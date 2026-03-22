@@ -9,6 +9,7 @@ from pydantic import BaseModel
 from typing import List, Optional
 from pathlib import Path
 import shutil
+import tempfile
 import uuid
 import logging
 
@@ -17,6 +18,13 @@ from ...services.file_registry import FileRecord, get_file_registry
 logger = logging.getLogger(__name__)
 
 router = APIRouter()
+
+
+def _get_transient_upload_path(file_id: str, suffix: str) -> Path:
+    """将上传文件写入系统临时目录，避免长期占用项目工作区。"""
+    upload_dir = Path(tempfile.gettempdir()) / "cad-review-engine"
+    upload_dir.mkdir(parents=True, exist_ok=True)
+    return upload_dir / f"{file_id}{suffix}"
 
 
 class UploadResponse(BaseModel):
@@ -75,12 +83,8 @@ async def upload_dwg(
     # 生成文件 ID
     file_id = str(uuid.uuid4())
 
-    # 创建上传目录
-    upload_dir = Path(settings.UPLOAD_DIR) / "dwg"
-    upload_dir.mkdir(parents=True, exist_ok=True)
-
-    # 保存文件
-    file_path = upload_dir / f"{file_id}{suffix}"
+    # 保存到系统临时目录
+    file_path = _get_transient_upload_path(file_id, suffix)
 
     try:
         with open(file_path, "wb") as f:
@@ -124,12 +128,8 @@ async def upload_contract(file: UploadFile = File(...)):
     # 生成文件 ID
     file_id = str(uuid.uuid4())
 
-    # 创建上传目录
-    upload_dir = Path(settings.UPLOAD_DIR) / "contract"
-    upload_dir.mkdir(parents=True, exist_ok=True)
-
-    # 保存文件
-    file_path = upload_dir / f"{file_id}{suffix}"
+    # 保存到系统临时目录
+    file_path = _get_transient_upload_path(file_id, suffix)
 
     try:
         with open(file_path, "wb") as f:

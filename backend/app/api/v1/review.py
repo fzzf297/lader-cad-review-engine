@@ -170,6 +170,9 @@ async def create_review(request: ReviewRequest):
     except Exception as e:
         logger.error(f"审核失败: {e}")
         raise HTTPException(500, f"审核失败: {str(e)}")
+    finally:
+        # 审核完成后立即清理输入文件，避免上传目录长期堆积。
+        get_file_registry().mark_consumed(request.dwg_file_id, remove_file=True)
 
 
 # ==================== 统计和历史记录 API ====================

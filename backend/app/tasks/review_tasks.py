@@ -119,6 +119,7 @@ def process_dwg_task(
     """
     task_id = self.request.id
     progress = TaskProgress(task_id)
+    cleanup_after_task = False
 
     try:
         # 阶段 1: 初始化 (0-10%)
@@ -174,6 +175,7 @@ def process_dwg_task(
 
         progress.update(100, "完成", "审核完成")
         logger.info(f"任务 {task_id}: 审核完成")
+        cleanup_after_task = True
 
         return final_result
 
@@ -192,6 +194,7 @@ def process_dwg_task(
             raise self.retry(exc=e)
         except self.MaxRetriesExceededError:
             logger.error(f"任务 {task_id}: 达到最大重试次数")
+            cleanup_after_task = True
             return {
                 "task_id": task_id,
                 "dwg_file_id": dwg_file_id,
@@ -200,6 +203,9 @@ def process_dwg_task(
                 "traceback": traceback.format_exc(),
                 "completed_at": datetime.now().isoformat()
             }
+    finally:
+        if cleanup_after_task:
+            get_file_registry().mark_consumed(dwg_file_id, remove_file=True)
 
 
 @celery_app.task(
@@ -236,6 +242,7 @@ def process_large_dwg_task(
     """
     task_id = self.request.id
     progress = TaskProgress(task_id)
+    cleanup_after_task = False
 
     try:
         progress.update(5, "初始化", "正在准备大文件处理...")
@@ -284,6 +291,7 @@ def process_large_dwg_task(
 
         progress.update(100, "完成", "审核完成")
         logger.info(f"任务 {task_id}: 大文件审核完成")
+        cleanup_after_task = True
 
         return final_result
 
@@ -300,6 +308,7 @@ def process_large_dwg_task(
             raise self.retry(exc=e)
         except self.MaxRetriesExceededError:
             logger.error(f"任务 {task_id}: 达到最大重试次数")
+            cleanup_after_task = True
             return {
                 "task_id": task_id,
                 "dwg_file_id": dwg_file_id,
@@ -308,6 +317,9 @@ def process_large_dwg_task(
                 "traceback": traceback.format_exc(),
                 "completed_at": datetime.now().isoformat()
             }
+    finally:
+        if cleanup_after_task:
+            get_file_registry().mark_consumed(dwg_file_id, remove_file=True)
 
 
 def get_task_status(task_id: str) -> Dict[str, Any]:
