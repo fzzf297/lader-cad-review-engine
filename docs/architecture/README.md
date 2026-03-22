@@ -67,3 +67,6 @@
 - `rule_codes` 已在同步和异步审核中生效
 - `dwg_analysis` 已在成功审核时稳定返回
 - Docker 部署仍建议配合 PostgreSQL 与 Redis 使用
+- 当前主审核入口是 DXF 直传，`.dwg` 上传会在接口层直接拒绝
+- 仓库源码目录已不再内置 `LibreDWG` runtime；裸机运行如需 DWG 转换，必须依赖系统安装的 `ODA File Converter` 或 `dwg2dxf`
+- Docker 镜像仍保留 `LibreDWG`，用于部署环境兜底与手动排查，不代表源码目录本身具备开箱即用的 DWG 转换能力
