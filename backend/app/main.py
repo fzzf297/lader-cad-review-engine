@@ -1,5 +1,5 @@
 """
-CAD 图纸审核引擎 - FastAPI 后端入口
+CAD 解析引擎 - FastAPI 后端入口
 """
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -38,7 +38,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title=settings.APP_NAME,
     version=settings.APP_VERSION,
-    description="CAD 图纸审核引擎，支持 DXF 图纸解析、规则审核、异步任务与报告导出",
+    description="CAD 解析引擎，支持 DXF 图纸解析、设备识别、异步任务与报告导出",
     lifespan=lifespan
 )
 

@@ -5,23 +5,23 @@ const router = useRouter()
 
 const features = [
   {
-    title: 'DXF 图纸审核',
-    description: '支持 DXF 文件解析，自动检查图层、线型、文字、图块等是否符合国标要求',
+    title: 'DXF 图纸解析',
+    description: '支持 DXF 文件解析，快速提取图层、文字、图块、图元和构件统计信息',
     icon: '📄'
   },
   {
     title: '图元统计分析',
-    description: '快速提取图层、图块、实体和门窗摘要，方便定位图纸结构与关键内容',
+    description: '聚焦图纸结构提取、设备识别和门窗摘要，方便理解 CAD 内容分布',
     icon: '📊'
   },
   {
-    title: '异步任务审核',
-    description: '默认走任务队列执行审核，大文件场景下也能持续查看进度与结果',
+    title: '异步任务解析',
+    description: '默认走任务队列执行解析，大文件场景下也能持续查看进度与结果',
     icon: '⏱️'
   },
   {
-    title: 'LLM 辅助审核',
-    description: '集成大语言模型，提供设计合理性分析和改进建议',
+    title: '结果复核辅助',
+    description: '在结构化解析结果之上保留基础检查与扩展分析能力，便于后续增强',
     icon: '🤖'
   }
 ]
@@ -34,10 +34,10 @@ const goToUpload = () => {
 <template>
   <div class="home-view">
     <div class="hero">
-      <h1>CAD 图纸审核引擎</h1>
-      <p class="subtitle">面向 DXF 图纸解析、规则审核与结果追踪的轻量化审核平台</p>
+      <h1>CAD 解析引擎</h1>
+      <p class="subtitle">面向 DXF 图纸结构提取、设备识别与结果追踪的轻量化 CAD 解析平台</p>
       <el-button type="primary" size="large" @click="goToUpload">
-        开始审核
+        开始解析
       </el-button>
     </div>
 

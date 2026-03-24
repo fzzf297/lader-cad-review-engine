@@ -75,7 +75,7 @@ const clearPollTimer = () => {
 
 const progressPercent = computed(() => taskStatus.value?.progress?.progress || 0)
 const progressStage = computed(() => taskStatus.value?.progress?.stage || taskStatus.value?.status || '初始化')
-const progressMessage = computed(() => taskStatus.value?.progress?.message || '正在准备审核任务...')
+const progressMessage = computed(() => taskStatus.value?.progress?.message || '正在准备解析任务...')
 
 const fetchReviewSync = async () => {
   const result = await reviewApi.createReview({
@@ -502,7 +502,7 @@ const pollTaskResult = async (taskId: string) => {
 
     loading.value = false
     clearPollTimer()
-    throw new Error(status.error || '异步审核失败')
+    throw new Error(status.error || '异步解析失败')
   }
 
   pollTimer = window.setTimeout(() => {
@@ -539,13 +539,13 @@ const fetchReview = async () => {
   } catch (error: any) {
     try {
       if (preferAsyncReview) {
-        ElMessage.warning('异步审核不可用，已回退到同步审核')
+        ElMessage.warning('异步解析不可用，已回退到同步解析')
       }
       await fetchReviewSync()
       await loadDwgPreview()
       await loadLegendItems()
     } catch (syncError: any) {
-      ElMessage.error(syncError.message || error.message || '审核失败')
+      ElMessage.error(syncError.message || error.message || '解析失败')
     } finally {
       loading.value = false
     }
@@ -574,7 +574,7 @@ onBeforeUnmount(() => {
   <div class="review-view">
     <div v-if="loading" class="loading-container">
       <el-icon class="is-loading" :size="48"><Loading /></el-icon>
-      <p>正在审核中，请稍候...</p>
+      <p>正在解析中，请稍候...</p>
       <p class="loading-stage">{{ progressStage }}</p>
       <p class="loading-message">{{ progressMessage }}</p>
       <el-progress
@@ -590,7 +590,7 @@ onBeforeUnmount(() => {
         <div class="overview-content compact">
           <div class="overview-main">
             <div class="overview-title-row">
-              <span class="overview-title">设备统计与复核</span>
+              <span class="overview-title">解析摘要与设备统计</span>
               <el-tag
                 :type="reviewResult.assessment === '通过' ? 'success' : reviewResult.assessment === '不通过' ? 'danger' : 'warning'"
                 size="large"
@@ -600,7 +600,7 @@ onBeforeUnmount(() => {
             </div>
             <p class="overview-description">
               当前页面最有价值的是“本图可识别设备”“统计数量”和“查看明细”。
-              顶部结论仅表示基础规则检查结果，不代表完整专业审图评分。
+              顶部结论仅表示基础检查结果，不代表完整专业审图评分。
             </p>
           </div>
           <div class="stats-section compact">
@@ -610,11 +610,11 @@ onBeforeUnmount(() => {
             </div>
             <div class="stat-item">
               <span class="stat-value warning">{{ warningCount }}</span>
-              <span class="stat-label">规则警告</span>
+              <span class="stat-label">检查警告</span>
             </div>
             <div class="stat-item">
               <span class="stat-value info">{{ infoCount }}</span>
-              <span class="stat-label">规则提示</span>
+              <span class="stat-label">检查提示</span>
             </div>
           </div>
         </div>

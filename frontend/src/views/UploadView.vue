@@ -42,7 +42,7 @@ const startReview = async () => {
 
 <template>
   <div class="upload-view">
-    <h2>上传文件</h2>
+    <h2>上传 DXF 文件</h2>
 
     <el-card class="upload-card">
       <template #header>
@@ -69,6 +69,9 @@ const startReview = async () => {
           show-icon
         />
       </div>
+      <div class="upload-hint">
+        当前版本聚焦 DXF 直传解析，不支持 DWG 自动转换。
+      </div>
     </el-card>
 
     <div class="action-bar">
@@ -79,7 +82,7 @@ const startReview = async () => {
         :loading="uploading"
         @click="startReview"
       >
-        开始审核
+        开始解析
       </el-button>
     </div>
   </div>
@@ -118,6 +121,12 @@ const startReview = async () => {
 
 .upload-message {
   margin-top: 12px;
+}
+
+.upload-hint {
+  margin-top: 12px;
+  color: #909399;
+  font-size: 13px;
 }
 
 .action-bar {

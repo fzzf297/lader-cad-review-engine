@@ -13,7 +13,7 @@ const navItems = [
 <template>
   <header class="app-header">
     <div class="logo">
-      <h1>CAD 图纸审核引擎</h1>
+      <h1>CAD 解析引擎</h1>
     </div>
     <nav class="nav-menu">
       <router-link

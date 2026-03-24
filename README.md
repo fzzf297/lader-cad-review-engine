@@ -1,20 +1,20 @@
-# CAD 图纸审核引擎
+# CAD 解析引擎
 
-一个面向单机部署和 Docker 部署的 CAD 图纸审核项目，当前聚焦 DXF 图纸解析与审核，支持：
+一个面向单机部署和 Docker 部署的 DXF CAD 解析项目，当前聚焦图纸结构提取、设备识别、基础检查与结果追踪，支持：
 
 - DXF 解析、图层/图块/实体统计、门窗摘要提取
-- 基于规则引擎的图纸规范审核
-- 可选 LLM 增强审核
-- 审核历史、统计、JSON/PDF 报告下载
-- 同步审核与异步任务审核两套入口
+- 设备图例识别与数量复核
+- 基于规则引擎的基础检查
+- 解析历史、统计、JSON/PDF 报告下载
+- 同步解析与异步任务两套入口
 
 ## 当前状态
 
-- 后端主路径已收口：上传、审核、历史都使用统一文件注册表
+- 后端主路径已收口：上传、解析、历史都使用统一文件注册表
 - 文件元数据默认持久化到 `${UPLOAD_DIR}/index.json`
-- 审核历史默认落到 `${UPLOAD_DIR}/history/`
+- 解析历史默认落到 `${UPLOAD_DIR}/history/`
 - 数据库已接入为主存储优先项；数据库不可用时会回退到 JSON 存储
-- 前端审核页默认优先走 `/api/v1/tasks` 异步任务并展示进度
+- 前端结果页默认优先走 `/api/v1/tasks` 异步任务并展示进度
 
 ## 技术栈
 
@@ -26,7 +26,7 @@
 | 前端框架 | Vue 3 + TypeScript + Vite + Element Plus |
 | 数据存储 | PostgreSQL 或 SQLite + 文件系统 + JSON 回退 |
 | 异步任务 | Celery + Redis |
-| LLM 服务 | OpenAI 兼容接口配置 |
+| LLM 服务 | OpenAI 兼容接口配置（可选） |
 
 ## 项目结构
 
@@ -67,10 +67,10 @@ npm install
 npm run dev
 ```
 
-当前默认审核链路是 DXF 直传。
+当前默认主链路是 DXF 直传解析。
 
 - `POST /api/v1/upload/dwg` 这个接口名称目前保留，但当前只接受 `.dxf`
-- `.dwg` 文件会被直接拒绝，避免出现“上传成功但审核阶段失败”的误导体验
+- `.dwg` 文件会被直接拒绝，避免出现“上传成功但后续解析失败”的误导体验
 
 ### Docker
 
@@ -106,9 +106,9 @@ Docker 编排会启动：
 - `GET /api/v1/upload/list?file_type=dwg`
 - `GET /api/v1/upload/{file_id}`
 
-上传后的文件内容会先写入系统临时目录，审核消费后自动删除；文件元数据会写入 `${UPLOAD_DIR}/index.json`。当前版本会直接拒绝 `.dwg` 上传，避免后续审核阶段失败。
+上传后的文件内容会先写入系统临时目录，解析消费后自动删除；文件元数据会写入 `${UPLOAD_DIR}/index.json`。当前版本会直接拒绝 `.dwg` 上传，避免后续解析阶段失败。
 
-### 2. 同步审核
+### 2. 同步解析
 
 - `POST /api/v1/review`
 
@@ -118,17 +118,17 @@ Docker 编排会启动：
 - `enable_llm`
 - `rule_codes`
 
-同步审核成功后会写入统一历史存储，并返回：
+同步解析成功后会写入统一历史存储，并返回：
 
 - `dwg_review`
 - `dwg_analysis`
-### 3. 异步审核
+### 3. 异步解析
 
 - `POST /api/v1/tasks`
 - `GET /api/v1/tasks/{task_id}`
 - `GET /api/v1/tasks/{task_id}/result`
 
-前端审核页默认优先创建异步任务并轮询进度；若异步链路不可用，会回退到同步审核。
+前端结果页默认优先创建异步任务并轮询进度；若异步链路不可用，会回退到同步解析。
 
 ### 4. 历史与报告
 
@@ -144,8 +144,8 @@ Docker 编排会启动：
 当前运行时采用“数据库优先，JSON 回退”：
 
 - 上传文件元数据：`${UPLOAD_DIR}/index.json`
-- 审核历史索引：`${UPLOAD_DIR}/history/index.json`
-- 审核完整结果：`${UPLOAD_DIR}/history/{record_id}.json`
+- 解析历史索引：`${UPLOAD_DIR}/history/index.json`
+- 解析完整结果：`${UPLOAD_DIR}/history/{record_id}.json`
 - 数据库可用时，同步写入 `dwg_files`、`review_records`、`review_issues`
 
 ### 历史 JSON 回填数据库

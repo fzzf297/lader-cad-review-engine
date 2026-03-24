@@ -9,7 +9,7 @@ class Settings(BaseSettings):
     """应用配置"""
 
     # 应用配置
-    APP_NAME: str = "CAD Review Engine"
+    APP_NAME: str = "CAD Parse Engine"
     APP_VERSION: str = "1.0.0"
     DEBUG: bool = False
 

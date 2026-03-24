@@ -60,7 +60,7 @@ async function viewDetail(record: ReviewRecord) {
   try {
     selectedDetail.value = await reviewApi.getHistoryDetail(record.record_id)
   } catch (error: any) {
-    ElMessage.error(error.message || '获取审核详情失败')
+    ElMessage.error(error.message || '获取解析详情失败')
   } finally {
     detailLoading.value = false
   }
@@ -143,14 +143,14 @@ onMounted(() => {
 
 <template>
   <div class="history-view">
-    <h2>历史记录</h2>
+    <h2>解析历史</h2>
 
     <!-- 统计卡片 -->
     <el-row :gutter="20" class="stats-row" v-if="statistics">
       <el-col :span="6">
         <el-card shadow="hover" class="stat-card">
           <div class="stat-value">{{ statistics.total_reviews }}</div>
-          <div class="stat-label">总审核次数</div>
+          <div class="stat-label">总解析次数</div>
         </el-card>
       </el-col>
       <el-col :span="6">
@@ -176,7 +176,7 @@ onMounted(() => {
     <!-- 筛选条件 -->
     <el-card class="filter-card">
       <el-form inline>
-        <el-form-item label="审核结论">
+        <el-form-item label="检查结论">
           <el-select
             v-model="filterAssessment"
             placeholder="全部"
@@ -195,7 +195,7 @@ onMounted(() => {
             clearable
             @change="handleFilterChange"
           >
-            <el-option label="DWG 图纸" value="dwg" />
+            <el-option label="DXF 图纸" value="dwg" />
           </el-select>
         </el-form-item>
       </el-form>
@@ -212,7 +212,7 @@ onMounted(() => {
             </div>
           </template>
         </el-table-column>
-        <el-table-column prop="created_at" label="审核时间" width="180">
+        <el-table-column prop="created_at" label="解析时间" width="180">
           <template #default="{ row }">
             {{ formatDate(row.created_at) }}
           </template>
@@ -284,7 +284,7 @@ onMounted(() => {
     <!-- 详情弹窗 -->
     <el-dialog
       v-model="detailDialogVisible"
-      title="审核详情"
+      title="解析详情"
       width="80%"
       destroy-on-close
     >
@@ -292,7 +292,7 @@ onMounted(() => {
       <template v-if="selectedRecord">
         <el-descriptions :column="2" border>
           <el-descriptions-item label="文件名">{{ selectedRecord.file_name }}</el-descriptions-item>
-          <el-descriptions-item label="审核时间">{{ formatDate(selectedRecord.created_at) }}</el-descriptions-item>
+          <el-descriptions-item label="解析时间">{{ formatDate(selectedRecord.created_at) }}</el-descriptions-item>
           <el-descriptions-item label="评分">
             <span :style="{ color: getScoreColor(selectedRecord.overall_score) }">
               {{ selectedRecord.overall_score.toFixed(1) }}
@@ -304,7 +304,7 @@ onMounted(() => {
             </el-tag>
           </el-descriptions-item>
           <el-descriptions-item label="问题数量">{{ selectedRecord.issue_count }}</el-descriptions-item>
-          <el-descriptions-item label="LLM 审核">
+          <el-descriptions-item label="LLM 分析">
             {{ selectedRecord.enable_llm ? '已启用' : '未启用' }}
           </el-descriptions-item>
         </el-descriptions>
@@ -325,7 +325,7 @@ onMounted(() => {
 
           <el-empty
             v-else
-            description="这条审核记录没有问题项"
+            description="这条解析记录没有问题项"
             style="margin-top: 16px;"
           />
         </template>

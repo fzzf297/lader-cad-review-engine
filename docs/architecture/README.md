@@ -2,31 +2,31 @@
 
 ## 运行主线
 
-系统当前有两条审核主线：
+系统当前有两条 DXF 解析主线：
 
-1. 同步审核：`/api/v1/review`
-2. 异步审核：`/api/v1/tasks`
+1. 同步解析：`/api/v1/review`
+2. 异步任务解析：`/api/v1/tasks`
 
-前端默认优先走异步审核；当异步链路不可用时回退到同步审核。
+前端默认优先走异步任务；当异步链路不可用时回退到同步解析。
 
 ## 后端核心模块
 
 - `app/api/v1/upload.py`
   - 文件上传、`/upload/list`、文件详情
 - `app/api/v1/review.py`
-  - 同步审核、历史记录、统计、报告
+  - 同步解析、历史记录、统计、报告
 - `app/api/v1/tasks.py`
   - 异步任务创建、进度查询、结果查询
 - `app/services/review_service.py`
-  - 图纸审核主编排与结果构建
+  - 图纸解析主编排与结果构建
 - `app/services/file_registry.py`
   - 上传文件元数据注册表
 - `app/services/history_storage.py`
-  - 审核历史统一读写入口
+  - 解析历史统一读写入口
 - `app/services/database_gateway.py`
   - 数据库优先读写与 JSON 回退桥接层
 - `app/tasks/review_tasks.py`
-  - Celery 后台审核任务
+  - Celery 后台解析任务
 
 ## 存储策略
 
@@ -45,11 +45,11 @@
 ## 前端页面
 
 - `UploadView.vue`
-  - 上传 DXF 文件，进入审核流程
+  - 上传 DXF 文件，进入解析流程
 - `ReviewView.vue`
-  - 默认发起异步任务，轮询进度，显示审核详情
+  - 默认发起异步任务，轮询进度，显示解析结果
 - `HistoryView.vue`
-  - 展示历史记录列表，并读取详情接口
+  - 展示解析历史列表，并读取详情接口
 
 ## 关键 API
 
@@ -67,4 +67,4 @@
 - `rule_codes` 已在同步和异步审核中生效
 - `dwg_analysis` 已在成功审核时稳定返回
 - Docker 部署仍建议配合 PostgreSQL 与 Redis 使用
-- 当前主审核入口是 DXF 直传，`.dwg` 上传会在接口层直接拒绝
+- 当前主入口是 DXF 直传解析，`.dwg` 上传会在接口层直接拒绝
