@@ -193,6 +193,56 @@ class TestLegendCounter:
         assert counted.excluded_as_legend == 1
         assert counted.actual_count == 2
 
+    async def test_count_excludes_same_row_legend_sample_peers(self, tmp_path):
+        service = get_legend_template_service(str(tmp_path / "legend_templates.json"))
+        counter = LegendCounter()
+        counter.template_service = service
+
+        result = DxfParseResult(
+            file_info={"filename": "sample.dxf"},
+            blocks={
+                "ALARM": {
+                    "name": "ALARM",
+                    "entities": [{"type": "CIRCLE"}],
+                    "entity_count": 1,
+                    "insert_count": 4,
+                    "is_door_window": False,
+                }
+            },
+            texts=[
+                {"type": "TEXT", "content": "图例 火灾声光报警器", "insert": {"x": -5000, "y": 5000, "z": 0}, "layer": "说明"},
+            ],
+            inserts=[
+                {"type": "INSERT", "name": "ALARM", "insert": {"x": -3200, "y": 5000, "z": 0}, "layer": "说明", "handle": "L1", "attribs": {}},
+                {"type": "INSERT", "name": "ALARM", "insert": {"x": 5200, "y": 5070, "z": 0}, "layer": "说明", "handle": "L2", "attribs": {}},
+                {"type": "INSERT", "name": "ALARM", "insert": {"x": 100, "y": 100, "z": 0}, "layer": "消防", "handle": "A1", "attribs": {}},
+                {"type": "INSERT", "name": "ALARM", "insert": {"x": 300, "y": 260, "z": 0}, "layer": "消防", "handle": "A2", "attribs": {}},
+            ],
+            entities=[
+                {"type": "INSERT", "insert": {"x": -3200, "y": 5000, "z": 0}},
+                {"type": "INSERT", "insert": {"x": 5200, "y": 5070, "z": 0}},
+                {"type": "INSERT", "insert": {"x": 100, "y": 100, "z": 0}},
+                {"type": "INSERT", "insert": {"x": 300, "y": 260, "z": 0}},
+                {"type": "LINE", "start": {"x": 0, "y": 0, "z": 0}},
+                {"type": "LINE", "start": {"x": 800, "y": 800, "z": 0}},
+            ],
+            block_signatures={
+                "ALARM": {
+                    "entity_types": ["CIRCLE"],
+                    "entity_type_counts": {"CIRCLE": 1},
+                    "entity_count": 1,
+                }
+            },
+            raw_texts=[],
+        )
+
+        counted = await counter.count(result, "火灾声光报警器")
+
+        assert counted.total_matches == 4
+        assert counted.excluded_as_legend == 2
+        assert counted.actual_count == 2
+        assert {item["handle"] for item in counted.excluded_matches} == {"L1", "L2"}
+
     async def test_count_excludes_note_callout_sample_pair(self, tmp_path):
         service = get_legend_template_service(str(tmp_path / "legend_templates.json"))
         counter = LegendCounter()

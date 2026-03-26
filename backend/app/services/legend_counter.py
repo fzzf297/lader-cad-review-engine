@@ -122,6 +122,7 @@ class LegendCounter:
         legend_zone_candidates = self._find_legend_zone_candidates(dxf_result, matched_labels, target)
         candidates = self._find_all_matches(dxf_result, target)
         legend_zone = self._infer_legend_zone(matched_labels, legend_zone_candidates)
+        cluster_map = self._build_candidate_clusters(candidates)
         initial_exclusions = [
             (
                 candidate,
@@ -130,6 +131,8 @@ class LegendCounter:
                     legend_zone=legend_zone,
                     dxf_result=dxf_result,
                     candidates=candidates,
+                    cluster_map=cluster_map,
+                    legend_zone_candidates=legend_zone_candidates,
                 ),
             )
             for candidate in candidates
@@ -215,6 +218,7 @@ class LegendCounter:
 
             legend_zone_candidates = self._find_legend_zone_candidates(dxf_result, [label], target)
             legend_zone = self._infer_legend_zone([label], legend_zone_candidates)
+            cluster_map = self._build_candidate_clusters(candidates)
             excluded_count = sum(
                 1
                 for candidate in candidates
@@ -223,6 +227,8 @@ class LegendCounter:
                     legend_zone=legend_zone,
                     dxf_result=dxf_result,
                     candidates=candidates,
+                    cluster_map=cluster_map,
+                    legend_zone_candidates=legend_zone_candidates,
                 )
             )
             actual_count = len(candidates) - excluded_count
@@ -559,6 +565,7 @@ class LegendCounter:
         target: Dict[str, Any],
     ) -> List[LegendMatch]:
         zone_candidates: List[LegendMatch] = []
+        seen_handles = set()
         target_name = target.get("block_name")
         target_signature = target.get("block_signature") or {}
 
@@ -583,18 +590,71 @@ class LegendCounter:
                 if self._distance((lx, ly), (ix, iy)) > 2500:
                     continue
 
-                point = insert.get("insert", {})
-                zone_candidates.append(LegendMatch(
-                    x=point.get("x", 0.0),
-                    y=point.get("y", 0.0),
-                    z=point.get("z", 0.0),
-                    layer=insert.get("layer", ""),
+                self._append_zone_candidate(zone_candidates, seen_handles, insert, block_name, "图例样例候选")
+                self._append_same_row_sample_peers(
+                    zone_candidates=zone_candidates,
+                    seen_handles=seen_handles,
+                    inserts=dxf_result.inserts,
+                    seed_insert=insert,
                     block_name=block_name or "",
-                    handle=insert.get("handle", ""),
-                    reason="图例样例候选",
-                ))
+                )
 
         return zone_candidates
+
+    def _append_zone_candidate(
+        self,
+        zone_candidates: List[LegendMatch],
+        seen_handles: set[str],
+        insert: Dict[str, Any],
+        block_name: Optional[str],
+        reason: str,
+    ) -> None:
+        handle = insert.get("handle", "")
+        if handle and handle in seen_handles:
+            return
+
+        point = insert.get("insert", {})
+        zone_candidates.append(LegendMatch(
+            x=point.get("x", 0.0),
+            y=point.get("y", 0.0),
+            z=point.get("z", 0.0),
+            layer=insert.get("layer", ""),
+            block_name=block_name or "",
+            handle=handle,
+            reason=reason,
+        ))
+        if handle:
+            seen_handles.add(handle)
+
+    def _append_same_row_sample_peers(
+        self,
+        zone_candidates: List[LegendMatch],
+        seen_handles: set[str],
+        inserts: List[Dict[str, Any]],
+        seed_insert: Dict[str, Any],
+        block_name: str,
+    ) -> None:
+        seed_x, seed_y = self._xy(seed_insert.get("insert"))
+
+        for other in inserts:
+            if other.get("name") != block_name:
+                continue
+            if other is seed_insert:
+                continue
+
+            other_x, other_y = self._xy(other.get("insert"))
+            if abs(other_y - seed_y) > 220:
+                continue
+            if abs(other_x - seed_x) > 12000:
+                continue
+
+            self._append_zone_candidate(
+                zone_candidates,
+                seen_handles,
+                other,
+                block_name,
+                "图例同行样例候选",
+            )
 
     def _infer_legend_zone(
         self,
@@ -628,6 +688,8 @@ class LegendCounter:
         legend_zone: Optional[Dict[str, float]],
         dxf_result: DxfParseResult,
         candidates: List[LegendMatch],
+        cluster_map: Dict[str, Dict[str, Any]],
+        legend_zone_candidates: List[LegendMatch],
     ) -> List[str]:
         reasons: List[str] = []
         if legend_zone and self._point_in_zone((candidate.x, candidate.y), legend_zone):
@@ -638,6 +700,8 @@ class LegendCounter:
             reasons.append("位于注释引线样例区")
         elif self._is_in_isolated_annotation_band(candidate, candidates, dxf_result):
             reasons.append("位于孤立注释样例区")
+        elif self._is_in_legend_seed_cluster(candidate, cluster_map, legend_zone_candidates):
+            reasons.append("位于图例样例簇")
 
         nearby_texts = self._find_nearby_texts(dxf_result, candidate.x, candidate.y, radius=900)
         if any(any(keyword in text for keyword in LEGEND_CONTEXT_KEYWORDS) for text in nearby_texts):
@@ -648,12 +712,95 @@ class LegendCounter:
 
         return reasons
 
+    def _build_candidate_clusters(self, candidates: List[LegendMatch]) -> Dict[str, Dict[str, Any]]:
+        if not candidates:
+            return {}
+
+        parent = {candidate.handle: candidate.handle for candidate in candidates if candidate.handle}
+        by_handle = {candidate.handle: candidate for candidate in candidates if candidate.handle}
+        distance_threshold = 20000.0
+
+        def find(handle: str) -> str:
+            while parent[handle] != handle:
+                parent[handle] = parent[parent[handle]]
+                handle = parent[handle]
+            return handle
+
+        def union(left: str, right: str) -> None:
+            left_root = find(left)
+            right_root = find(right)
+            if left_root != right_root:
+                parent[right_root] = left_root
+
+        handles = list(by_handle.keys())
+        for index, left in enumerate(handles):
+            left_candidate = by_handle[left]
+            for right in handles[index + 1:]:
+                right_candidate = by_handle[right]
+                if self._distance((left_candidate.x, left_candidate.y), (right_candidate.x, right_candidate.y)) <= distance_threshold:
+                    union(left, right)
+
+        grouped: Dict[str, List[LegendMatch]] = {}
+        for handle, candidate in by_handle.items():
+            grouped.setdefault(find(handle), []).append(candidate)
+
+        cluster_map: Dict[str, Dict[str, Any]] = {}
+        for cluster_id, members in grouped.items():
+            member_handles = {member.handle for member in members if member.handle}
+            for member in members:
+                cluster_map[member.handle] = {
+                    "cluster_id": cluster_id,
+                    "size": len(members),
+                    "handles": member_handles,
+                }
+        return cluster_map
+
+    def _is_in_legend_seed_cluster(
+        self,
+        candidate: LegendMatch,
+        cluster_map: Dict[str, Dict[str, Any]],
+        legend_zone_candidates: List[LegendMatch],
+    ) -> bool:
+        if len(cluster_map) < 10:
+            return False
+        if not candidate.handle:
+            return False
+        cluster_info = cluster_map.get(candidate.handle)
+        if not cluster_info:
+            return False
+
+        cluster_handles = cluster_info["handles"]
+        seed_handles = {
+            item.handle
+            for item in legend_zone_candidates
+            if item.handle and item.handle in cluster_handles
+        }
+        if not seed_handles:
+            return False
+
+        cluster_size = int(cluster_info["size"])
+        return 1 < cluster_size <= 8 and candidate.handle not in seed_handles
+
     def _is_in_auxiliary_legend_band(self, candidate: LegendMatch, legend_zone: Dict[str, float]) -> bool:
         width = legend_zone["max_x"] - legend_zone["min_x"]
-        if width <= 0:
+        height = legend_zone["max_y"] - legend_zone["min_y"]
+        if width <= 0 or height < 0:
             return False
-        horizontal_gap = legend_zone["min_x"] - candidate.x
-        return 0 < horizontal_gap <= max(12000.0, width * 6)
+        horizontal_gap = 0.0
+        if candidate.x < legend_zone["min_x"]:
+            horizontal_gap = legend_zone["min_x"] - candidate.x
+        elif candidate.x > legend_zone["max_x"]:
+            horizontal_gap = candidate.x - legend_zone["max_x"]
+        else:
+            return False
+
+        vertical_padding = max(800.0, height * 0.6)
+        within_row_band = (
+            legend_zone["min_y"] - vertical_padding
+            <= candidate.y
+            <= legend_zone["max_y"] + vertical_padding
+        )
+        return within_row_band and 0 < horizontal_gap <= max(12000.0, width * 6)
 
     def _is_in_note_callout_sample_pair(
         self,
