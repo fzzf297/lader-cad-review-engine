@@ -2,7 +2,7 @@ import api from './index'
 import type { UploadListResponse, UploadResponse } from '@/types/api'
 
 export const uploadApi = {
-  async uploadDwg(file: File, onProgress?: (percent: number) => void): Promise<UploadResponse> {
+  async uploadDrawing(file: File, onProgress?: (percent: number) => void): Promise<UploadResponse> {
     const formData = new FormData()
     formData.append('file', file)
 

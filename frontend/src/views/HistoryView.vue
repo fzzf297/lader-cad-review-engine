@@ -15,7 +15,7 @@ const statistics = ref<StatisticsResponse | null>(null)
 
 // 筛选条件
 const filterAssessment = ref('')
-const filterFileType = ref('')
+const filterDrawingType = ref('')
 
 // 选中的记录
 const selectedRecord = ref<ReviewRecord | null>(null)
@@ -31,7 +31,7 @@ async function fetchHistory() {
       page: currentPage.value,
       page_size: pageSize.value,
       assessment: filterAssessment.value || undefined,
-      file_type: filterFileType.value || undefined
+      file_type: filterDrawingType.value || undefined
     })
     records.value = response.records
     total.value = response.total
@@ -190,12 +190,12 @@ onMounted(() => {
         </el-form-item>
         <el-form-item label="文件类型">
           <el-select
-            v-model="filterFileType"
+            v-model="filterDrawingType"
             placeholder="全部"
             clearable
             @change="handleFilterChange"
           >
-            <el-option label="DXF 图纸" value="dwg" />
+            <el-option label="解析图纸" value="dwg" />
           </el-select>
         </el-form-item>
       </el-form>

@@ -54,7 +54,7 @@ export interface ReviewResponse {
     by_category: Record<string, number>
   }
   llm_enabled: boolean
-  dwg_analysis?: DwgAnalysis
+  dwg_analysis?: DrawingAnalysis
 }
 
 export interface BlockInfo {
@@ -71,7 +71,7 @@ export interface DoorWindowSummary {
   windows: { name: string; count: number }[]
 }
 
-export interface DwgAnalysis {
+export interface DrawingAnalysis {
   file_info: {
     dxf_version: string
     units_name: string
@@ -88,7 +88,7 @@ export interface DwgAnalysis {
 }
 
 export interface AsyncTaskRequest {
-  dwg_file_id: string
+  drawing_file_id: string
   enable_llm?: boolean
   rule_codes?: string[]
   large_file?: boolean
@@ -266,7 +266,7 @@ export interface LegendCountResponse {
   confidence: number
 }
 
-export interface DwgPreviewEntity {
+export interface DrawingPreviewEntity {
   type: string
   start?: { x: number; y: number }
   end?: { x: number; y: number }
@@ -282,7 +282,7 @@ export interface DwgPreviewEntity {
   rotation?: number
 }
 
-export interface DwgPreviewResponse {
+export interface DrawingPreviewResponse {
   file_id: string
   entity_count: number
   bounds: {
@@ -291,5 +291,5 @@ export interface DwgPreviewResponse {
     min_y: number
     max_y: number
   }
-  entities: DwgPreviewEntity[]
+  entities: DrawingPreviewEntity[]
 }

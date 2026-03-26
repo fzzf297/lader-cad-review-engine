@@ -2,7 +2,7 @@ import api from './index'
 import type { ReviewResponse, HistoryListResponse, StatisticsResponse } from '@/types/api'
 
 export interface ReviewRequest {
-  dwg_file_id: string
+  drawing_file_id: string
   enable_llm?: boolean
   rule_codes?: string[]
 }
@@ -16,7 +16,11 @@ export interface HistoryListParams {
 
 export const reviewApi = {
   async createReview(request: ReviewRequest): Promise<ReviewResponse> {
-    return api.post('/review', request) as Promise<ReviewResponse>
+    return api.post('/review', {
+      dwg_file_id: request.drawing_file_id,
+      enable_llm: request.enable_llm,
+      rule_codes: request.rule_codes
+    }) as Promise<ReviewResponse>
   },
 
   async getReviewResult(reviewId: string): Promise<ReviewResponse> {

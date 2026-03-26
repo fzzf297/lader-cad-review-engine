@@ -8,7 +8,7 @@ import { tasksApi } from '@/api/tasks'
 import { uploadApi } from '@/api/upload'
 import { parseApi } from '@/api/parse'
 import type {
-  DwgPreviewResponse,
+  DrawingPreviewResponse,
   LegendCountResponse,
   LegendDiscoveryItem,
   ReviewResponse,
@@ -31,7 +31,7 @@ const legendCounts = ref<Record<string, LegendCountResponse>>({})
 const activeLegendName = ref('')
 const legendDetailVisible = ref(false)
 const activeLegendHandle = ref('')
-const dwgPreview = ref<DwgPreviewResponse | null>(null)
+const drawingPreview = ref<DrawingPreviewResponse | null>(null)
 const legendViewMode = ref<'focus' | 'full'>('focus')
 const legendShowKeep = ref(true)
 const legendShowExclude = ref(true)
@@ -79,7 +79,7 @@ const progressMessage = computed(() => taskStatus.value?.progress?.message || '�
 
 const fetchReviewSync = async () => {
   const result = await reviewApi.createReview({
-    dwg_file_id: fileId,
+    drawing_file_id: fileId,
     enable_llm: enableLlm.value
   })
   reviewResult.value = result
@@ -98,11 +98,11 @@ const loadLegendItems = async () => {
   }
 }
 
-const loadDwgPreview = async () => {
+const loadDrawingPreview = async () => {
   try {
-    dwgPreview.value = await parseApi.getDwgPreview(fileId)
+    drawingPreview.value = await parseApi.getDrawingPreview(fileId)
   } catch (error: any) {
-    dwgPreview.value = null
+    drawingPreview.value = null
     ElMessage.warning(error.message || '图纸底图预览加载失败')
   }
 }
@@ -203,7 +203,7 @@ const legendPlot = computed(() => {
   const maxX = Math.max(...points.map((item) => item.x))
   const minY = Math.min(...points.map((item) => item.y))
   const maxY = Math.max(...points.map((item) => item.y))
-  const previewBounds = dwgPreview.value?.bounds
+  const previewBounds = drawingPreview.value?.bounds
   const pointSpanX = Math.max(maxX - minX, 1)
   const pointSpanY = Math.max(maxY - minY, 1)
   const focusPaddingX = Math.max(pointSpanX * 0.18, 6000)
@@ -247,7 +247,7 @@ const legendPlot = computed(() => {
   const gridLinesX = Array.from({ length: 5 }, (_, index) => padding + (index / 4) * (width - padding * 2))
   const gridLinesY = Array.from({ length: 5 }, (_, index) => padding + (index / 4) * (height - padding * 2))
 
-  const previewEntities = (dwgPreview.value?.entities || [])
+  const previewEntities = (drawingPreview.value?.entities || [])
     .map((entity, index) => {
       if (entity.type === 'LINE' && entity.start && entity.end) {
         return {
@@ -493,7 +493,7 @@ const pollTaskResult = async (taskId: string) => {
   if (status.ready) {
     if (status.successful) {
       reviewResult.value = await tasksApi.getTaskResult(taskId)
-      await loadDwgPreview()
+      await loadDrawingPreview()
       await loadLegendItems()
       loading.value = false
       clearPollTimer()
@@ -522,7 +522,7 @@ const fetchReview = async () => {
   try {
     if (!preferAsyncReview) {
       await fetchReviewSync()
-      await loadDwgPreview()
+      await loadDrawingPreview()
       await loadLegendItems()
       loading.value = false
       return
@@ -530,7 +530,7 @@ const fetchReview = async () => {
 
     const fileInfo = await uploadApi.getFileInfo(fileId)
     const task = await tasksApi.createTask({
-      dwg_file_id: fileId,
+      drawing_file_id: fileId,
       enable_llm: enableLlm.value,
       large_file: (fileInfo.file_size || 0) >= LARGE_FILE_THRESHOLD
     })
@@ -542,7 +542,7 @@ const fetchReview = async () => {
         ElMessage.warning('异步解析不可用，已回退到同步解析')
       }
       await fetchReviewSync()
-      await loadDwgPreview()
+      await loadDrawingPreview()
       await loadLegendItems()
     } catch (syncError: any) {
       ElMessage.error(syncError.message || error.message || '解析失败')

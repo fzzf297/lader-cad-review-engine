@@ -11,7 +11,7 @@ interface UploadResult {
 }
 
 const props = defineProps<{
-  type: 'dwg'
+  type: 'drawing'
   accept: string
 }>()
 

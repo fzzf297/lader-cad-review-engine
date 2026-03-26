@@ -3,7 +3,12 @@ import type { AsyncTaskRequest, ReviewResponse, TaskStatusResponse } from '@/typ
 
 export const tasksApi = {
   async createTask(request: AsyncTaskRequest): Promise<TaskStatusResponse> {
-    return api.post('/tasks', request) as Promise<TaskStatusResponse>
+    return api.post('/tasks', {
+      dwg_file_id: request.drawing_file_id,
+      enable_llm: request.enable_llm,
+      rule_codes: request.rule_codes,
+      large_file: request.large_file
+    }) as Promise<TaskStatusResponse>
   },
 
   async getTaskStatus(taskId: string): Promise<TaskStatusResponse> {

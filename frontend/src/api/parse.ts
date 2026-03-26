@@ -1,5 +1,5 @@
 import api from './index'
-import type { DwgPreviewResponse, LegendCountResponse, LegendDiscoveryResponse } from '@/types/api'
+import type { DrawingPreviewResponse, LegendCountResponse, LegendDiscoveryResponse } from '@/types/api'
 
 export const parseApi = {
   async getLegendItems(fileId: string): Promise<LegendDiscoveryResponse> {
@@ -14,7 +14,7 @@ export const parseApi = {
     }) as Promise<LegendCountResponse>
   },
 
-  async getDwgPreview(fileId: string): Promise<DwgPreviewResponse> {
-    return api.get(`/parse/dwg/${fileId}/preview`) as Promise<DwgPreviewResponse>
+  async getDrawingPreview(fileId: string): Promise<DrawingPreviewResponse> {
+    return api.get(`/parse/dwg/${fileId}/preview`) as Promise<DrawingPreviewResponse>
   }
 }

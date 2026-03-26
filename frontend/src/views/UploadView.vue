@@ -6,7 +6,7 @@ import FileUpload from '@/components/upload/FileUpload.vue'
 
 const router = useRouter()
 
-const dwgFileId = ref<string | null>(null)
+const drawingFileId = ref<string | null>(null)
 const uploading = ref(false)
 const uploadMessage = ref<string | null>(null)
 const converted = ref(false)
@@ -18,22 +18,22 @@ interface UploadResult {
   converted?: boolean
 }
 
-const handleDwgSuccess = (result: UploadResult) => {
-  dwgFileId.value = result.file_id
+const handleDrawingSuccess = (result: UploadResult) => {
+  drawingFileId.value = result.file_id
   uploadMessage.value = result.message || null
   converted.value = result.converted || false
   ElMessage.success('DXF 文件上传成功')
 }
 
 const startReview = async () => {
-  if (!dwgFileId.value) {
+  if (!drawingFileId.value) {
     ElMessage.warning('请先上传 DXF 文件')
     return
   }
 
   uploading.value = true
   try {
-    router.push({ path: `/review/${dwgFileId.value}` })
+    router.push({ path: `/review/${drawingFileId.value}` })
   } finally {
     uploading.value = false
   }
@@ -52,11 +52,11 @@ const startReview = async () => {
         </div>
       </template>
       <FileUpload
-        type="dwg"
+        type="drawing"
         accept=".dxf"
-        @success="handleDwgSuccess"
+        @success="handleDrawingSuccess"
       />
-      <div v-if="dwgFileId" class="upload-status">
+      <div v-if="drawingFileId" class="upload-status">
         <el-tag :type="converted ? 'warning' : 'success'">
           {{ converted ? '已转换' : '已上传' }}
         </el-tag>
@@ -78,7 +78,7 @@ const startReview = async () => {
       <el-button
         type="primary"
         size="large"
-        :disabled="!dwgFileId"
+        :disabled="!drawingFileId"
         :loading="uploading"
         @click="startReview"
       >
