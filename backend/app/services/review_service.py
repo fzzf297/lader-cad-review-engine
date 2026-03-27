@@ -717,7 +717,6 @@ class FullReviewService:
             "file_info": dxf_data.file_info,
             "layers": list(dxf_data.layers.values()),
             "blocks": blocks,
-            "statistics": dxf_data.statistics,
             "door_window_summary": {
                 "total_doors": sum(item["count"] for item in doors),
                 "total_windows": sum(item["count"] for item in windows),

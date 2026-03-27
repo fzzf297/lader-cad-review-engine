@@ -469,7 +469,6 @@ class DwgPreviewEntityResponse(BaseModel):
 
 class DwgPreviewResponse(BaseModel):
     file_id: str
-    entity_count: int
     bounds: Dict[str, float]
     entities: List[DwgPreviewEntityResponse]
 

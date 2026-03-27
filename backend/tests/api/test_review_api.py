@@ -136,7 +136,6 @@ class TestReviewAPI:
                     "file_info": {"dxf_version": "AC1032", "units_name": "米", "filename": "drawing.dxf"},
                     "layers": [],
                     "blocks": [],
-                    "statistics": {"layer_count": 0, "block_count": 0, "entity_count": 0, "text_count": 0, "dimension_count": 0, "insert_count": 0},
                     "door_window_summary": {"total_doors": 0, "total_windows": 0, "doors": [], "windows": []},
                 },
                 "contract_dwg_comparison": None,

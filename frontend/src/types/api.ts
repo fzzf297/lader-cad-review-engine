@@ -83,7 +83,6 @@ export interface DrawingAnalysis {
     linetype: string
   }>
   blocks: BlockInfo[]
-  statistics: Record<string, number>
   door_window_summary: DoorWindowSummary
 }
 
@@ -157,11 +156,8 @@ export interface ParseVerificationCheck {
 }
 
 export interface ParseVerificationIndicators {
-  entity_count: number
-  layer_count: number
   door_window_types: number
   door_window_list: string[]
-  text_count: number
 }
 
 export interface DwgParseVerificationResponse {
@@ -179,9 +175,6 @@ export interface DwgParseVerificationResponse {
   }
   parse_metadata: ParseMetadata
   summary: {
-    entity_count: number
-    layer_count: number
-    block_count: number
     door_window_types: number
     confidence: string
   }
@@ -284,7 +277,6 @@ export interface DrawingPreviewEntity {
 
 export interface DrawingPreviewResponse {
   file_id: string
-  entity_count: number
   bounds: {
     min_x: number
     max_x: number

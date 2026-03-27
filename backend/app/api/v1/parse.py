@@ -565,6 +565,10 @@ async def verify_dwg_parse(file_id: str):
 
         # 验证解析结果
         verification = verifier.verify(dxf_result, file_id, file_info.filename)
+        indicators = dict(verification.get("indicators", {}))
+        for key in ("entity_count", "layer_count", "text_count"):
+            indicators.pop(key, None)
+        verification["indicators"] = indicators
 
         # 构建验证响应
         status = "verified" if verification["is_valid"] else "failed"
@@ -578,9 +582,6 @@ async def verify_dwg_parse(file_id: str):
             verification=verification,
             parse_metadata=dxf_result.parse_metadata,
             summary={
-                "entity_count": len(dxf_result.entities),
-                "layer_count": len(dxf_result.layers),
-                "block_count": len(dxf_result.blocks),
                 "door_window_types": verification["indicators"].get("door_window_types", 0),
                 "confidence": verification["confidence"],
             }

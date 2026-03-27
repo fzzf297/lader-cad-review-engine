@@ -118,7 +118,6 @@ class TestParseAPI:
             )
             payload = {
                 "file_id": "dwg-1",
-                "entity_count": 4,
                 "bounds": {"min_x": 0, "max_x": 100, "min_y": 0, "max_y": 100},
                 "entities": [
                     {"type": "LINE", "start": {"x": 0, "y": 0}, "end": {"x": 100, "y": 0}},
@@ -137,7 +136,6 @@ class TestParseAPI:
 
             assert response.status_code == 200
             data = response.json()
-            assert data["entity_count"] == 4
             assert data["bounds"]["max_x"] == 100
             assert data["entities"][0]["type"] == "LINE"
             assert data["entities"][2]["type"] == "ARC"

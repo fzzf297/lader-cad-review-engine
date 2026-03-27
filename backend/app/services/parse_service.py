@@ -214,7 +214,6 @@ class ParseService:
 
         return {
             "file_id": file_id,
-            "entity_count": min(len(entities), max_entities),
             "bounds": bounds,
             "entities": entities[:max_entities],
         }
