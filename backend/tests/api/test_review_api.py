@@ -109,8 +109,8 @@ class TestReviewAPI:
         response = client.post("/api/v1/review/contract/nonexistent-id")
         assert response.status_code == 404
 
-    def test_create_review_passes_rule_codes_and_returns_dwg_analysis(self):
-        """测试审核接口透传 rule_codes 并始终返回图纸分析"""
+    def test_create_review_passes_rule_codes(self):
+        """测试审核接口透传 rule_codes。"""
         with tempfile.TemporaryDirectory() as tmpdir:
             dxf_path = Path(tmpdir) / "drawing.dxf"
             dxf_path.write_text("fake-dxf")
@@ -132,12 +132,6 @@ class TestReviewAPI:
                     "llm_enabled": False,
                 },
                 "contract_analysis": None,
-                "dwg_analysis": {
-                    "file_info": {"dxf_version": "AC1032", "units_name": "米", "filename": "drawing.dxf"},
-                    "layers": [],
-                    "blocks": [],
-                    "door_window_summary": {"total_doors": 0, "total_windows": 0, "doors": [], "windows": []},
-                },
                 "contract_dwg_comparison": None,
             }
 
@@ -157,7 +151,7 @@ class TestReviewAPI:
 
             assert response.status_code == 200
             data = response.json()
-            assert data["dwg_analysis"]["file_info"]["filename"] == "drawing.dxf"
+            assert data["assessment"] == "通过"
             mock_service.full_review.assert_awaited_once()
             assert mock_service.full_review.await_args.kwargs["rule_codes"] == ["TEXT_001"]
             mock_registry.return_value.mark_consumed.assert_called_once_with("dwg-1", remove_file=True)

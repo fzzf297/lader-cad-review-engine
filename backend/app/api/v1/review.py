@@ -51,7 +51,6 @@ class ReviewResponse(BaseModel):
     issues: List[IssueResponse]
     summary: Dict[str, Any]
     llm_enabled: bool = False
-    dwg_analysis: Optional[Dict[str, Any]] = None
 
 
 class ReviewRecordResponse(BaseModel):
@@ -163,7 +162,6 @@ async def create_review(request: ReviewRequest):
             ],
             summary=result["dwg_review"]["summary"],
             llm_enabled=result["dwg_review"]["llm_enabled"],
-            dwg_analysis=result.get("dwg_analysis"),
         )
 
     except Exception as e:
@@ -244,7 +242,6 @@ async def get_history_detail(record_id: str):
         ],
         summary=result["dwg_review"]["summary"],
         llm_enabled=result["dwg_review"]["llm_enabled"],
-        dwg_analysis=result.get("dwg_analysis"),
     )
 
 
@@ -349,5 +346,4 @@ async def get_review_result(review_id: str):
         ],
         summary=result["dwg_review"]["summary"],
         llm_enabled=result["dwg_review"]["llm_enabled"],
-        dwg_analysis=result.get("dwg_analysis"),
     )

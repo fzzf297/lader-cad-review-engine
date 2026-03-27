@@ -70,12 +70,6 @@ class TestTasksAPI:
                 "summary": {"total_issues": 0, "by_severity": {}, "by_source": {}, "by_category": {}},
                 "llm_enabled": False,
             },
-            "dwg_analysis": {
-                "file_info": {"dxf_version": "AC1032", "units_name": "米", "filename": "drawing.dxf"},
-                "layers": [],
-                "blocks": [],
-                "door_window_summary": {"total_doors": 0, "total_windows": 0, "doors": [], "windows": []},
-            },
         }
 
         with patch("app.tasks.review_tasks.get_task_status", return_value={
@@ -93,4 +87,3 @@ class TestTasksAPI:
         data = response.json()
         assert data["overall_score"] == 95
         assert data["assessment"] == "通过"
-        assert data["dwg_analysis"]["file_info"]["filename"] == "drawing.dxf"

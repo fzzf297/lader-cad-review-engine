@@ -54,16 +54,9 @@ const legendDragState = ref<{
 })
 let pollTimer: number | null = null
 
-const errorCount = computed(() => {
-  return reviewResult.value?.issues.filter(i => i.severity === 'error').length || 0
-})
-
-const warningCount = computed(() => {
-  return reviewResult.value?.issues.filter(i => i.severity === 'warning').length || 0
-})
-
-const infoCount = computed(() => {
-  return reviewResult.value?.issues.filter(i => i.severity === 'info').length || 0
+const countedLegendNames = computed(() => Object.keys(legendCounts.value).length)
+const countedLegendTotal = computed(() => {
+  return Object.values(legendCounts.value).reduce((sum, item) => sum + item.actual_count, 0)
 })
 
 const clearPollTimer = () => {
@@ -590,31 +583,24 @@ onBeforeUnmount(() => {
         <div class="overview-content compact">
           <div class="overview-main">
             <div class="overview-title-row">
-              <span class="overview-title">解析摘要与设备统计</span>
-              <el-tag
-                :type="reviewResult.assessment === '通过' ? 'success' : reviewResult.assessment === '不通过' ? 'danger' : 'warning'"
-                size="large"
-              >
-                {{ reviewResult.assessment }}
-              </el-tag>
+              <span class="overview-title">图例识别结果</span>
             </div>
             <p class="overview-description">
-              当前页面最有价值的是“本图可识别设备”“统计数量”和“查看明细”。
-              顶部结论仅表示基础检查结果，不代表完整专业审图评分。
+              当前页面只保留图例名称、识别数量和对应证据，方便你快速确认主图中的真实布置数量。
             </p>
           </div>
           <div class="stats-section compact">
             <div class="stat-item">
               <span class="stat-value">{{ legendItems.length }}</span>
-              <span class="stat-label">识别设备</span>
+              <span class="stat-label">图例名称</span>
             </div>
             <div class="stat-item">
-              <span class="stat-value warning">{{ warningCount }}</span>
-              <span class="stat-label">检查警告</span>
+              <span class="stat-value warning">{{ countedLegendNames }}</span>
+              <span class="stat-label">已统计项</span>
             </div>
             <div class="stat-item">
-              <span class="stat-value info">{{ infoCount }}</span>
-              <span class="stat-label">检查提示</span>
+              <span class="stat-value info">{{ countedLegendTotal }}</span>
+              <span class="stat-label">累计数量</span>
             </div>
           </div>
         </div>

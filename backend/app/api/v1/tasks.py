@@ -188,5 +188,4 @@ async def get_task_result(task_id: str):
         ],
         summary=dwg_review.get("summary", {}),
         llm_enabled=dwg_review.get("llm_enabled", False),
-        dwg_analysis=review_result.get("dwg_analysis"),
     )

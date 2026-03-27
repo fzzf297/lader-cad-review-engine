@@ -54,36 +54,6 @@ export interface ReviewResponse {
     by_category: Record<string, number>
   }
   llm_enabled: boolean
-  dwg_analysis?: DrawingAnalysis
-}
-
-export interface BlockInfo {
-  name: string
-  entity_count: number
-  insert_count: number
-  is_door_window: boolean
-}
-
-export interface DoorWindowSummary {
-  total_doors: number
-  total_windows: number
-  doors: { name: string; count: number }[]
-  windows: { name: string; count: number }[]
-}
-
-export interface DrawingAnalysis {
-  file_info: {
-    dxf_version: string
-    units_name: string
-    filename: string
-  }
-  layers: Array<{
-    name: string
-    color: number
-    linetype: string
-  }>
-  blocks: BlockInfo[]
-  door_window_summary: DoorWindowSummary
 }
 
 export interface AsyncTaskRequest {
