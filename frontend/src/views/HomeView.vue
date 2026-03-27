@@ -6,7 +6,7 @@ const router = useRouter()
 const features = [
   {
     title: 'DXF 图纸解析',
-    description: '支持 DXF 文件解析，快速提取图层、文字、图块、图元和构件统计信息',
+    description: '支持 DXF 文件解析，聚焦图纸结构提取、设备识别与关键内容抽取',
     icon: '📄'
   },
   {

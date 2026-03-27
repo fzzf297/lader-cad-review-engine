@@ -442,15 +442,12 @@ async def get_dwg_door_window_stats(file_id: str):
         raise HTTPException(500, f"门窗统计获取失败: {str(e)}")
 
 
-@router.get("/dwg/{file_id}/statistics", response_model=DwgStatisticsResponse)
+@router.get("/dwg/{file_id}/statistics", response_model=DwgStatisticsResponse, include_in_schema=False)
 async def get_dwg_statistics(file_id: str):
     """
-    获取图纸完整统计
+    获取图纸统计摘要。
 
-    展示 DXF 文件的完整统计信息：
-    - 文件信息（版本、单位）
-    - 各类实体数量统计
-    - 按类型和分类的详细统计
+    当前仅保留给内部排查使用，不作为对外稳定展示能力。
     """
     # 检查文件是否存在
     file_info = get_uploaded_file(file_id, expected_type="dwg")
