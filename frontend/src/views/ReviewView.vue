@@ -54,11 +54,6 @@ const legendDragState = ref<{
 })
 let pollTimer: number | null = null
 
-const countedLegendNames = computed(() => Object.keys(legendCounts.value).length)
-const countedLegendTotal = computed(() => {
-  return Object.values(legendCounts.value).reduce((sum, item) => sum + item.actual_count, 0)
-})
-
 const clearPollTimer = () => {
   if (pollTimer !== null) {
     window.clearTimeout(pollTimer)
@@ -579,33 +574,6 @@ onBeforeUnmount(() => {
     </div>
 
     <template v-else-if="reviewResult">
-      <el-card class="overview-card">
-        <div class="overview-content compact">
-          <div class="overview-main">
-            <div class="overview-title-row">
-              <span class="overview-title">图例识别结果</span>
-            </div>
-            <p class="overview-description">
-              当前页面只保留图例名称、识别数量和对应证据，方便你快速确认主图中的真实布置数量。
-            </p>
-          </div>
-          <div class="stats-section compact">
-            <div class="stat-item">
-              <span class="stat-value">{{ legendItems.length }}</span>
-              <span class="stat-label">图例名称</span>
-            </div>
-            <div class="stat-item">
-              <span class="stat-value warning">{{ countedLegendNames }}</span>
-              <span class="stat-label">已统计项</span>
-            </div>
-            <div class="stat-item">
-              <span class="stat-value info">{{ countedLegendTotal }}</span>
-              <span class="stat-label">累计数量</span>
-            </div>
-          </div>
-        </div>
-      </el-card>
-
       <el-card class="legend-card">
         <template #header>
           <div class="card-header">
