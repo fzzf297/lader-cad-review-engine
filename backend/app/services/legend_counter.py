@@ -692,7 +692,9 @@ class LegendCounter:
         legend_zone_candidates: List[LegendMatch],
     ) -> List[str]:
         reasons: List[str] = []
-        if legend_zone and self._point_in_zone((candidate.x, candidate.y), legend_zone):
+        if self._is_in_outer_margin_sparse_cluster(candidate, candidates, dxf_result):
+            reasons.append("位于图纸边缘样例区")
+        elif legend_zone and self._point_in_zone((candidate.x, candidate.y), legend_zone):
             reasons.append("位于图例候选区域")
         elif legend_zone and self._is_in_auxiliary_legend_band(candidate, legend_zone):
             reasons.append("位于图例辅助样例区")
@@ -801,6 +803,68 @@ class LegendCounter:
             <= legend_zone["max_y"] + vertical_padding
         )
         return within_row_band and 0 < horizontal_gap <= max(12000.0, width * 6)
+
+    def _is_in_outer_margin_sparse_cluster(
+        self,
+        candidate: LegendMatch,
+        candidates: List[LegendMatch],
+        dxf_result: DxfParseResult,
+    ) -> bool:
+        if len(candidates) < 10:
+            return False
+
+        bounds = self._compute_layout_bounds(dxf_result)
+        if not bounds:
+            return False
+
+        span_x = max(bounds["max_x"] - bounds["min_x"], 1.0)
+        span_y = max(bounds["max_y"] - bounds["min_y"], 1.0)
+        margin_x = max(12000.0, span_x * 0.05)
+        margin_y = max(12000.0, span_y * 0.05)
+        in_outer_margin = (
+            candidate.x <= bounds["min_x"] + margin_x
+            or candidate.x >= bounds["max_x"] - margin_x
+            or candidate.y <= bounds["min_y"] + margin_y
+            or candidate.y >= bounds["max_y"] - margin_y
+        )
+        if not in_outer_margin:
+            return False
+
+        local_neighbors = sum(
+            1
+            for other in candidates
+            if other.handle != candidate.handle
+            and self._distance((candidate.x, candidate.y), (other.x, other.y)) <= 18000
+        )
+        if local_neighbors > 2:
+            return False
+
+        return self._is_far_from_main_cluster(dxf_result, candidate.x, candidate.y)
+
+    def _compute_layout_bounds(self, dxf_result: DxfParseResult) -> Optional[Dict[str, float]]:
+        points: List[Tuple[float, float]] = []
+
+        for insert in dxf_result.inserts:
+            points.append(self._xy(insert.get("insert")))
+        for text in dxf_result.texts:
+            points.append(self._xy(text.get("insert")))
+        for entity in dxf_result.entities:
+            for key in ("insert", "center", "start", "end"):
+                point = entity.get(key)
+                if point:
+                    points.append(self._xy(point))
+            for vertex in entity.get("vertices", []) or []:
+                points.append(self._xy(vertex))
+
+        if len(points) < 5:
+            return None
+
+        return {
+            "min_x": min(point[0] for point in points),
+            "max_x": max(point[0] for point in points),
+            "min_y": min(point[1] for point in points),
+            "max_y": max(point[1] for point in points),
+        }
 
     def _is_in_note_callout_sample_pair(
         self,
