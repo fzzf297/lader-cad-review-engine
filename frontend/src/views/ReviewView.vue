@@ -625,14 +625,13 @@ onBeforeUnmount(() => {
           max-height="360"
           empty-text="暂未识别到可用图例设备"
         >
-          <el-table-column prop="normalized_name" label="设备名称" min-width="220" />
-          <el-table-column prop="block_name" label="候选块" min-width="180" />
-          <el-table-column label="初步识别" width="140">
+          <el-table-column prop="normalized_name" label="图例名称" min-width="260" />
+          <el-table-column label="识别数量" width="140">
             <template #default="{ row }">
               <span class="soft-value">{{ row.estimated_actual_count }}</span>
             </template>
           </el-table-column>
-          <el-table-column label="精确统计" width="220">
+          <el-table-column label="统计结果" width="220">
             <template #default="{ row }">
               <div class="legend-count-cell">
                 <span v-if="legendCounts[row.normalized_name]">
