@@ -72,6 +72,23 @@ const startReview = async () => {
       <div class="upload-hint">
         当前版本聚焦 DXF 直传解析，不支持 DWG 自动转换。
       </div>
+      <el-alert
+        class="external-converter-hint"
+        title="如果你的源文件是 DWG，可先使用外部工具转换成 DXF 后再上传。"
+        type="info"
+        :closable="false"
+        show-icon
+      >
+        <template #default>
+          <a
+            href="https://imagetostl.com/cn/convert/file/dwg/to/dxf"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            打开 DWG 转 DXF 在线转换工具
+          </a>
+        </template>
+      </el-alert>
     </el-card>
 
     <div class="action-bar">
@@ -127,6 +144,19 @@ const startReview = async () => {
   margin-top: 12px;
   color: #909399;
   font-size: 13px;
+}
+
+.external-converter-hint {
+  margin-top: 12px;
+}
+
+.external-converter-hint a {
+  color: #409eff;
+  text-decoration: none;
+}
+
+.external-converter-hint a:hover {
+  text-decoration: underline;
 }
 
 .action-bar {
