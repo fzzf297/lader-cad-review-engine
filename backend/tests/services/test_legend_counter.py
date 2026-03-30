@@ -5,7 +5,7 @@ from unittest.mock import AsyncMock, Mock, patch
 
 from app.parsers.dxf_parser import DxfParseResult
 from app.services.legend_counter import LegendCounter
-from app.services.legend_template_service import get_legend_template_service
+from app.services.legend_template_service import LegendTemplate, get_legend_template_service
 
 
 def build_sample_result() -> DxfParseResult:
@@ -302,6 +302,75 @@ class TestLegendCounter:
         assert counted.total_matches == 11
         assert counted.actual_count == 10
         assert any(item["handle"] == "EDGE1" and "图纸边缘样例区" in item["reason"] for item in counted.excluded_matches)
+
+    async def test_count_excludes_title_block_corner_candidate(self, tmp_path):
+        service = get_legend_template_service(str(tmp_path / "legend_templates.json"))
+        service.save(LegendTemplate(
+            name="火灾声光报警器",
+            query="火灾声光报警器",
+            block_name="ALARM",
+            block_signature={"entity_types": ["CIRCLE"], "entity_type_counts": {"CIRCLE": 1}, "entity_count": 1},
+            layer_hints=["消防"],
+            attribute_tags=[],
+            aliases=["火灾声光报警器"],
+        ))
+        counter = LegendCounter()
+        counter.template_service = service
+
+        central_inserts = [
+            {
+                "type": "INSERT",
+                "name": "ALARM",
+                "insert": {"x": 20000.0 + index * 1500.0, "y": 20000.0 + index * 900.0, "z": 0},
+                "layer": "消防",
+                "handle": f"C{index}",
+                "attribs": {},
+            }
+            for index in range(8)
+        ]
+
+        result = DxfParseResult(
+            file_info={"filename": "sample.dxf"},
+            blocks={
+                "ALARM": {
+                    "name": "ALARM",
+                    "entities": [{"type": "CIRCLE"}],
+                    "entity_count": 1,
+                    "insert_count": 9,
+                    "is_door_window": False,
+                }
+            },
+            texts=[
+                {"type": "TEXT", "content": "消防平面图", "insert": {"x": 115000, "y": 9000, "z": 0}, "layer": "图框"},
+                {"type": "TEXT", "content": "比例 1:100", "insert": {"x": 116000, "y": 7000, "z": 0}, "layer": "图框"},
+            ],
+            inserts=central_inserts + [
+                {"type": "INSERT", "name": "ALARM", "insert": {"x": 118000.0, "y": 8000.0, "z": 0}, "layer": "消防", "handle": "TB1", "attribs": {}},
+            ],
+            entities=[
+                {"type": "INSERT", "insert": insert["insert"]}
+                for insert in central_inserts
+            ] + [
+                {"type": "INSERT", "insert": {"x": 118000.0, "y": 8000.0, "z": 0}},
+                {"type": "LINE", "start": {"x": 0.0, "y": 0.0, "z": 0}},
+                {"type": "LINE", "start": {"x": 120000.0, "y": 0.0, "z": 0}},
+                {"type": "LINE", "start": {"x": 120000.0, "y": 60000.0, "z": 0}},
+            ],
+            block_signatures={
+                "ALARM": {
+                    "entity_types": ["CIRCLE"],
+                    "entity_type_counts": {"CIRCLE": 1},
+                    "entity_count": 1,
+                }
+            },
+            raw_texts=[],
+        )
+
+        counted = await counter.count(result, "火灾声光报警器")
+
+        assert counted.total_matches == 9
+        assert counted.actual_count == 8
+        assert any(item["handle"] == "TB1" and "图框标题栏区域" in item["reason"] for item in counted.excluded_matches)
 
     async def test_count_excludes_note_callout_sample_pair(self, tmp_path):
         service = get_legend_template_service(str(tmp_path / "legend_templates.json"))

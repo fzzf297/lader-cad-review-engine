@@ -19,6 +19,10 @@ from .legend_template_service import LegendTemplate, get_legend_template_service
 
 
 LEGEND_CONTEXT_KEYWORDS = ["图例", "说明", "符号", "设备名称", "图标", "注"]
+TITLE_BLOCK_KEYWORDS = [
+    "平面图", "总平面图", "图框", "图号", "比例", "日期",
+    "设计", "审核", "校对", "审定", "工程名称", "项目名称", "施工图",
+]
 
 
 @dataclass
@@ -694,6 +698,8 @@ class LegendCounter:
         reasons: List[str] = []
         if self._is_in_outer_margin_sparse_cluster(candidate, candidates, dxf_result):
             reasons.append("位于图纸边缘样例区")
+        elif self._is_in_title_block_corner_zone(candidate, candidates, dxf_result):
+            reasons.append("位于图框标题栏区域")
         elif legend_zone and self._point_in_zone((candidate.x, candidate.y), legend_zone):
             reasons.append("位于图例候选区域")
         elif legend_zone and self._is_in_auxiliary_legend_band(candidate, legend_zone):
@@ -865,6 +871,43 @@ class LegendCounter:
             "min_y": min(point[1] for point in points),
             "max_y": max(point[1] for point in points),
         }
+
+    def _is_in_title_block_corner_zone(
+        self,
+        candidate: LegendMatch,
+        candidates: List[LegendMatch],
+        dxf_result: DxfParseResult,
+    ) -> bool:
+        bounds = self._compute_layout_bounds(dxf_result)
+        if not bounds:
+            return False
+
+        span_x = max(bounds["max_x"] - bounds["min_x"], 1.0)
+        span_y = max(bounds["max_y"] - bounds["min_y"], 1.0)
+        margin_x = max(15000.0, span_x * 0.08)
+        margin_y = max(15000.0, span_y * 0.08)
+        near_left = candidate.x <= bounds["min_x"] + margin_x
+        near_right = candidate.x >= bounds["max_x"] - margin_x
+        near_bottom = candidate.y <= bounds["min_y"] + margin_y
+        near_top = candidate.y >= bounds["max_y"] - margin_y
+        if not ((near_left or near_right) and (near_bottom or near_top)):
+            return False
+
+        nearby_texts = self._find_nearby_texts(dxf_result, candidate.x, candidate.y, radius=14000)
+        title_hits = [
+            text for text in nearby_texts
+            if any(keyword in text for keyword in TITLE_BLOCK_KEYWORDS)
+        ]
+        if not title_hits:
+            return False
+
+        local_neighbors = sum(
+            1
+            for other in candidates
+            if other.handle != candidate.handle
+            and self._distance((candidate.x, candidate.y), (other.x, other.y)) <= 12000
+        )
+        return local_neighbors <= 3
 
     def _is_in_note_callout_sample_pair(
         self,
