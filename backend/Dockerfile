@@ -16,14 +16,14 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Set work directory
 WORKDIR /app
 
-# Copy dependency files
+# Copy dependency metadata and app package so setuptools can resolve the project
 COPY pyproject.toml ./
+COPY app ./app
 
 # Install Python dependencies
-RUN pip install --no-cache-dir . && \
-    pip install --no-cache-dir .[dev]
+RUN pip install --no-cache-dir .
 
-# Copy application code
+# Copy the remaining application files
 COPY . .
 
 # Create uploads directory

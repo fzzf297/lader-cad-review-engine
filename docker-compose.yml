@@ -69,6 +69,34 @@ services:
     networks:
       - dwg-network
 
+  worker:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: dwg-review-worker
+    restart: unless-stopped
+    command: celery -A app.tasks.celery_app.celery_app worker --loglevel=info -Q review
+    environment:
+      - DEBUG=${DEBUG:-false}
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-dwg_user}:${POSTGRES_PASSWORD:-dwg_password}@postgres:5432/${POSTGRES_DB:-dwg_review}
+      - REDIS_URL=redis://redis:6379/0
+      - UPLOAD_DIR=/app/uploads
+      - MAX_FILE_SIZE=${MAX_FILE_SIZE:-104857600}
+      - QWEN_API_KEY=${QWEN_API_KEY:-}
+      - QWEN_MODEL=${QWEN_MODEL:-qwen-plus}
+      - LLM_ENABLED=${LLM_ENABLED:-false}
+    volumes:
+      - uploads:/app/uploads
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      backend:
+        condition: service_started
+    networks:
+      - dwg-network
+
   # Vue Frontend
   frontend:
     build:
