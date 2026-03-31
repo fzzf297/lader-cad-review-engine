@@ -209,6 +209,20 @@ class LegendCounter:
         for label in labels:
             target = self._select_target(dxf_result, [label], template=None)
             if not target or not target.get("block_name"):
+                fallback_key = (label["normalized_name"], "__label_only__")
+                if fallback_key in seen_keys:
+                    continue
+                seen_keys.add(fallback_key)
+                discovered.append(LegendDiscoveryItem(
+                    label_text=label["content"],
+                    normalized_name=label["normalized_name"],
+                    block_name="",
+                    total_matches=0,
+                    estimated_actual_count=0,
+                    excluded_as_legend=0,
+                    confidence=round(0.32 + (0.18 if self._has_legend_context(label, dxf_result) else 0.0), 2),
+                    source="label_text_only",
+                ))
                 continue
 
             key = (label["normalized_name"], target["block_name"])

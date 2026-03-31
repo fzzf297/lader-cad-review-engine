@@ -602,14 +602,18 @@ onBeforeUnmount(() => {
           <el-table-column label="统计结果" width="220">
             <template #default="{ row }">
               <div class="legend-count-cell">
+                <span v-if="row.source === 'label_text_only'" class="legend-count-placeholder">
+                  待支持
+                </span>
                 <span v-if="legendCounts[row.normalized_name]">
                   {{ legendCounts[row.normalized_name].actual_count }} / {{ legendCounts[row.normalized_name].total_matches }}
                 </span>
-                <span v-else class="legend-count-placeholder">未统计</span>
+                <span v-else-if="row.source !== 'label_text_only'" class="legend-count-placeholder">未统计</span>
                 <el-button
                   link
                   type="primary"
                   :loading="legendCountingKey === row.normalized_name"
+                  :disabled="row.source === 'label_text_only'"
                   @click="runLegendCount(row)"
                 >
                   统计数量
@@ -622,7 +626,7 @@ onBeforeUnmount(() => {
               <el-button
                 link
                 type="primary"
-                :disabled="!legendCounts[row.normalized_name]"
+                :disabled="row.source === 'label_text_only' || !legendCounts[row.normalized_name]"
                 @click="openLegendDetail(row)"
               >
                 查看明细

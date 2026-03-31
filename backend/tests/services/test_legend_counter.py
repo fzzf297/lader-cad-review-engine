@@ -87,6 +87,31 @@ class TestLegendCounter:
         assert result.actual_count == 2
         assert any("图例候选区域" in item["reason"] for item in result.excluded_matches)
 
+    async def test_discover_falls_back_to_label_only_item_when_no_block_target(self, tmp_path):
+        service = get_legend_template_service(str(tmp_path / "legend_templates.json"))
+        counter = LegendCounter()
+        counter.template_service = service
+
+        result = DxfParseResult(
+            file_info={"filename": "sample.dxf"},
+            texts=[
+                {"type": "TEXT", "content": "图例：", "insert": {"x": 0, "y": 0, "z": 0}, "layer": "说明"},
+                {"type": "TEXT", "content": "固定挡烟垂壁", "insert": {"x": 200, "y": 0, "z": 0}, "layer": "说明"},
+            ],
+            inserts=[],
+            entities=[],
+            blocks={},
+            block_signatures={},
+            raw_texts=[],
+        )
+
+        items = await counter.discover(result)
+
+        assert len(items) == 1
+        assert items[0]["normalized_name"] == "固定挡烟垂壁"
+        assert items[0]["source"] == "label_text_only"
+        assert items[0]["total_matches"] == 0
+
     async def test_count_can_save_and_reuse_template(self, tmp_path):
         service = get_legend_template_service(str(tmp_path / "legend_templates.json"))
         counter = LegendCounter()
