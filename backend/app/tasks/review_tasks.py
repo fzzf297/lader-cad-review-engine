@@ -58,7 +58,7 @@ class TaskProgress:
                 "message": message,
                 "timestamp": datetime.now().isoformat()
             },
-            status="PROGRESS"
+            state="PROGRESS"
         )
 
 
