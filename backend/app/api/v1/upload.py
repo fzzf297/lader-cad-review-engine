@@ -9,7 +9,6 @@ from pydantic import BaseModel
 from typing import List, Optional
 from pathlib import Path
 import shutil
-import tempfile
 import uuid
 import logging
 
@@ -20,9 +19,9 @@ logger = logging.getLogger(__name__)
 router = APIRouter()
 
 
-def _get_transient_upload_path(file_id: str, suffix: str) -> Path:
-    """将上传文件写入系统临时目录，避免长期占用项目工作区。"""
-    upload_dir = Path(tempfile.gettempdir()) / "cad-review-engine"
+def _get_transient_upload_path(file_id: str, suffix: str, category: str) -> Path:
+    """将上传文件写入共享上传目录，供 backend 和 worker 容器共同访问。"""
+    upload_dir = Path(settings.UPLOAD_DIR) / category
     upload_dir.mkdir(parents=True, exist_ok=True)
     return upload_dir / f"{file_id}{suffix}"
 
@@ -84,7 +83,7 @@ async def upload_dwg(
     file_id = str(uuid.uuid4())
 
     # 保存到系统临时目录
-    file_path = _get_transient_upload_path(file_id, suffix)
+    file_path = _get_transient_upload_path(file_id, suffix, "drawing")
 
     try:
         with open(file_path, "wb") as f:
@@ -129,7 +128,7 @@ async def upload_contract(file: UploadFile = File(...)):
     file_id = str(uuid.uuid4())
 
     # 保存到系统临时目录
-    file_path = _get_transient_upload_path(file_id, suffix)
+    file_path = _get_transient_upload_path(file_id, suffix, "contract")
 
     try:
         with open(file_path, "wb") as f:
