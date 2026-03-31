@@ -75,7 +75,7 @@ services:
       dockerfile: Dockerfile
     container_name: dwg-review-worker
     restart: unless-stopped
-    command: celery -A app.tasks.celery_app.celery_app worker --loglevel=info -Q review
+    command: celery -A app.tasks.celery_app.celery_app worker --loglevel=info --concurrency=1 -Q review
     environment:
       - DEBUG=${DEBUG:-false}
       - DATABASE_URL=postgresql://${POSTGRES_USER:-dwg_user}:${POSTGRES_PASSWORD:-dwg_password}@postgres:5432/${POSTGRES_DB:-dwg_review}
