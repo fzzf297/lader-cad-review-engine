@@ -154,7 +154,7 @@ class TestReviewAPI:
             assert data["assessment"] == "通过"
             mock_service.full_review.assert_awaited_once()
             assert mock_service.full_review.await_args.kwargs["rule_codes"] == ["TEXT_001"]
-            mock_registry.return_value.mark_consumed.assert_called_once_with("dwg-1", remove_file=True)
+            mock_registry.return_value.mark_consumed.assert_not_called()
 
 
 class TestHistoryAPI:
