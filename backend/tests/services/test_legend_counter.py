@@ -64,6 +64,14 @@ def build_sample_result() -> DxfParseResult:
 
 
 class TestLegendCounter:
+    def test_device_name_rules_cover_smoke_control_terms(self):
+        counter = LegendCounter()
+
+        assert counter._normalize_label_name("自然排烟口(有效面积1.98m%%1402%%141)") == "自然排烟口"
+        assert counter._looks_like_device_name("固定挡烟垂壁") is True
+        assert counter._looks_like_device_name("活动挡烟垂壁") is True
+        assert counter._looks_like_device_name("自然排烟口") is True
+
     async def test_count_excludes_legend_instances(self, tmp_path):
         service = get_legend_template_service(str(tmp_path / "legend_templates.json"))
         counter = LegendCounter()

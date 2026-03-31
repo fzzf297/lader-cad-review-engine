@@ -412,6 +412,7 @@ class LegendCounter:
         for prefix in ["图例", "设备名称", "编号", "符号", "说明", "名称"]:
             if text.startswith(prefix):
                 text = text[len(prefix):]
+        text = re.sub(r"[（(][^()（）]*[）)]", "", text)
         text = re.split(r"[，,；;。]", text, maxsplit=1)[0]
         return text.strip(" :：-")
 
@@ -431,6 +432,8 @@ class LegendCounter:
             "探测器", "报警器", "按钮", "电话", "模块", "隔离器",
             "广播", "扬声器", "显示器", "警报", "火灾", "消防",
             "烟感", "感烟", "感温", "栓", "水流", "压力", "控制器",
+            "挡烟垂壁", "排烟口", "排烟窗", "送风口", "排风口", "风口",
+            "风阀", "防火阀", "排烟阀", "送风阀",
         ]
         return any(keyword in text for keyword in allow_keywords)
 
