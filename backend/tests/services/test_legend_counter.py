@@ -71,6 +71,9 @@ class TestLegendCounter:
         assert counter._looks_like_device_name("固定挡烟垂壁") is True
         assert counter._looks_like_device_name("活动挡烟垂壁") is True
         assert counter._looks_like_device_name("自然排烟口") is True
+        assert counter._looks_like_device_name("一层挡烟垂壁布置平面") is False
+        assert counter._looks_like_device_name("排烟窗最小有效面积") is False
+        assert counter._looks_like_device_name("有效排烟窗底标高") is False
 
     async def test_count_excludes_legend_instances(self, tmp_path):
         service = get_legend_template_service(str(tmp_path / "legend_templates.json"))
