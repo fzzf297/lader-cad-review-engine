@@ -115,6 +115,59 @@ class TestLegendCounter:
         assert items[0]["source"] == "label_text_only"
         assert items[0]["total_matches"] == 0
 
+    async def test_discover_degrades_smoke_control_generic_block_to_label_only(self, tmp_path):
+        service = get_legend_template_service(str(tmp_path / "legend_templates.json"))
+        counter = LegendCounter()
+        counter.template_service = service
+
+        result = DxfParseResult(
+            file_info={"filename": "sample.dxf"},
+            texts=[
+                {"type": "TEXT", "content": "图例", "insert": {"x": 0, "y": 0, "z": 0}, "layer": "说明"},
+                {"type": "TEXT", "content": "固定挡烟垂壁", "insert": {"x": 200, "y": 0, "z": 0}, "layer": "说明"},
+            ],
+            inserts=[
+                {"type": "INSERT", "name": "$DorLib2D$00000001", "insert": {"x": 260, "y": 0, "z": 0}, "layer": "0", "handle": "L1", "attribs": {}},
+            ],
+            entities=[],
+            blocks={"$DorLib2D$00000001": {"name": "$DorLib2D$00000001", "entities": [{"type": "LINE"}], "entity_count": 1, "insert_count": 1, "is_door_window": False}},
+            block_signatures={"$DorLib2D$00000001": {"entity_types": ["LINE"], "entity_type_counts": {"LINE": 1}, "entity_count": 1}},
+            raw_texts=[],
+        )
+
+        items = await counter.discover(result)
+
+        assert len(items) == 1
+        assert items[0]["normalized_name"] == "固定挡烟垂壁"
+        assert items[0]["source"] == "label_text_only"
+
+    async def test_count_returns_unstable_result_for_smoke_control_generic_block(self, tmp_path):
+        service = get_legend_template_service(str(tmp_path / "legend_templates.json"))
+        counter = LegendCounter()
+        counter.template_service = service
+
+        result = DxfParseResult(
+            file_info={"filename": "sample.dxf"},
+            texts=[
+                {"type": "TEXT", "content": "图例", "insert": {"x": 0, "y": 0, "z": 0}, "layer": "说明"},
+                {"type": "TEXT", "content": "固定挡烟垂壁", "insert": {"x": 200, "y": 0, "z": 0}, "layer": "说明"},
+            ],
+            inserts=[
+                {"type": "INSERT", "name": "$DorLib2D$00000001", "insert": {"x": 260, "y": 0, "z": 0}, "layer": "0", "handle": "L1", "attribs": {}},
+                {"type": "INSERT", "name": "$DorLib2D$00000001", "insert": {"x": 2000, "y": 0, "z": 0}, "layer": "0", "handle": "A1", "attribs": {}},
+            ],
+            entities=[],
+            blocks={"$DorLib2D$00000001": {"name": "$DorLib2D$00000001", "entities": [{"type": "LINE"}], "entity_count": 1, "insert_count": 2, "is_door_window": False}},
+            block_signatures={"$DorLib2D$00000001": {"entity_types": ["LINE"], "entity_type_counts": {"LINE": 1}, "entity_count": 1}},
+            raw_texts=[],
+        )
+
+        counted = await counter.count(result, "固定挡烟垂壁")
+
+        assert counted.total_matches == 0
+        assert counted.actual_count == 0
+        assert counted.confidence < 0.2
+
     async def test_count_can_save_and_reuse_template(self, tmp_path):
         service = get_legend_template_service(str(tmp_path / "legend_templates.json"))
         counter = LegendCounter()
@@ -181,6 +234,27 @@ class TestLegendCounter:
             )
 
         assert result.actual_count == 2
+
+    def test_match_label_texts_prefers_legend_context_items(self):
+        counter = LegendCounter()
+        result = DxfParseResult(
+            file_info={"filename": "sample.dxf"},
+            texts=[
+                {"type": "TEXT", "content": "图例", "insert": {"x": 0, "y": 0, "z": 0}, "layer": "说明"},
+                {"type": "TEXT", "content": "固定挡烟垂壁", "insert": {"x": 200, "y": 0, "z": 0}, "layer": "说明"},
+                {"type": "TEXT", "content": "固定挡烟垂壁", "insert": {"x": 10000, "y": 10000, "z": 0}, "layer": "标注"},
+            ],
+            inserts=[],
+            entities=[],
+            blocks={},
+            block_signatures={},
+            raw_texts=[],
+        )
+
+        matched = counter._match_label_texts(result, ["固定挡烟垂壁"])
+
+        assert len(matched) == 1
+        assert matched[0]["layer"] == "说明"
 
     async def test_count_prefers_explicit_legend_zone_over_far_cluster(self, tmp_path):
         service = get_legend_template_service(str(tmp_path / "legend_templates.json"))

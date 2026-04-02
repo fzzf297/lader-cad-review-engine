@@ -109,6 +109,9 @@ class LegendCounter:
             matched_labels = self._match_label_texts(dxf_result, aliases)
             target = self._select_target(dxf_result, matched_labels, template)
 
+        if target and self._should_degrade_to_label_only(query, target):
+            target = None
+
         if not target:
             return LegendCountResult(
                 query=query,
@@ -208,7 +211,11 @@ class LegendCounter:
 
         for label in labels:
             target = self._select_target(dxf_result, [label], template=None)
-            if not target or not target.get("block_name"):
+            if (
+                not target
+                or not target.get("block_name")
+                or self._should_degrade_to_label_only(label["normalized_name"], target)
+            ):
                 fallback_key = (label["normalized_name"], "__label_only__")
                 if fallback_key in seen_keys:
                     continue
@@ -453,6 +460,25 @@ class LegendCounter:
         ]
         return any(keyword in text for keyword in allow_keywords)
 
+    def _is_smoke_control_name(self, text: str) -> bool:
+        smoke_control_keywords = [
+            "挡烟垂壁", "排烟口", "排烟窗", "送风口", "排风口",
+            "风口", "风阀", "防火阀", "排烟阀", "送风阀",
+        ]
+        return any(keyword in text for keyword in smoke_control_keywords)
+
+    def _is_generic_library_block(self, block_name: str) -> bool:
+        if not block_name:
+            return True
+        return block_name.startswith("$")
+
+    def _should_degrade_to_label_only(self, query: str, target: Optional[Dict[str, Any]]) -> bool:
+        if not target:
+            return False
+        if not self._is_smoke_control_name(query):
+            return False
+        return self._is_generic_library_block(target.get("block_name", ""))
+
     def _match_label_texts(self, dxf_result: DxfParseResult, aliases: List[str]) -> List[Dict[str, Any]]:
         matched = []
         for text in dxf_result.texts:
@@ -484,6 +510,9 @@ class LegendCounter:
             ),
             reverse=True,
         )
+        contextual_matches = [item for item in matched if item["_legend_context"]]
+        if contextual_matches:
+            return contextual_matches[:10]
         return matched[:10]
 
     def _select_target(
