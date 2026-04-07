@@ -12,6 +12,7 @@ from ..parsers.dxf_parser import DxfParser, DxfParseResult
 from ..parsers.contract_parser import ContractParser, ContractContent, WorkItemExtractor
 from ..services.review_service import ContractAnalysisService, ContractAnalysisResult, WorkItem
 from ..services.legend_counter import LegendCounter
+from ..services.vision_experiment_service import VisionExperimentService
 from ..core.config import settings
 
 logger = logging.getLogger(__name__)
@@ -38,6 +39,7 @@ class ParseService:
                 base_url=settings.QWEN_BASE_URL,
             )
         self.legend_counter = LegendCounter()
+        self.vision_experiment_service = VisionExperimentService()
 
     async def parse_dxf(self, file_path: str, file_id: str) -> DxfParseResult:
         """解析 DXF 文件（带缓存）"""
@@ -217,6 +219,30 @@ class ParseService:
             "bounds": bounds,
             "entities": entities[:max_entities],
         }
+
+    async def experimental_vision_regions(
+        self,
+        file_path: str,
+        file_id: str,
+    ) -> Dict[str, Any]:
+        dxf_result = await self.parse_dxf(file_path, file_id)
+        preview = await self.get_dwg_preview(file_path, file_id)
+        return await self.vision_experiment_service.analyze_regions(dxf_result, preview, file_id)
+
+    async def experimental_vision_classify(
+        self,
+        file_path: str,
+        file_id: str,
+        legend_name: str,
+    ) -> Dict[str, Any]:
+        dxf_result = await self.parse_dxf(file_path, file_id)
+        preview = await self.get_dwg_preview(file_path, file_id)
+        return await self.vision_experiment_service.classify_legend(
+            dxf_result=dxf_result,
+            preview=preview,
+            file_id=file_id,
+            legend_name=legend_name,
+        )
 
     def _normalize_preview_text(self, content: str) -> str:
         normalized = (

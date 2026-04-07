@@ -30,6 +30,11 @@ class Settings(BaseSettings):
     QWEN_BASE_URL: str = "https://dashscope.aliyuncs.com/compatible-mode/v1"
     LLM_ENABLED: bool = False
 
+    # 多模态实验配置
+    VISION_EXPERIMENT_ENABLED: bool = False
+    VISION_EXPERIMENT_PROVIDER: str = "heuristic-preview"
+    VISION_EXPERIMENT_MODEL: str = "preview-v1"
+
     class Config:
         env_file = ".env"
         case_sensitive = True

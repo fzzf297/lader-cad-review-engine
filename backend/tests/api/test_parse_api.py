@@ -140,3 +140,139 @@ class TestParseAPI:
             assert data["entities"][0]["type"] == "LINE"
             assert data["entities"][2]["type"] == "ARC"
             assert data["entities"][3]["content"] == "一层平面图"
+
+    def test_experimental_vision_regions_returns_region_groups(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            dxf_path = Path(tmpdir) / "drawing.dxf"
+            dxf_path.write_text("fake-dxf")
+
+            dwg_record = FileRecord(
+                file_id="dwg-1",
+                filename="drawing.dxf",
+                file_type="dwg",
+                file_path=str(dxf_path),
+                suffix=".dxf",
+                uploaded_at="2026-03-18T12:00:00",
+            )
+            payload = {
+                "file_id": "dwg-1",
+                "enabled": True,
+                "provider": "heuristic-preview",
+                "model": "preview-v1",
+                "overview_image": "data:image/svg+xml;base64,ZmFrZQ==",
+                "legend_regions": [
+                    {
+                        "region_id": "legend-1",
+                        "label": "固定挡烟垂壁",
+                        "min_x": 0,
+                        "max_x": 100,
+                        "min_y": 0,
+                        "max_y": 100,
+                        "confidence": 0.86,
+                        "reason": "候选图例区",
+                        "image_data": "data:image/svg+xml;base64,ZmFrZQ==",
+                    }
+                ],
+                "content_regions": [],
+                "excluded_regions": [],
+            }
+
+            with patch("app.api.v1.parse.get_uploaded_file", return_value=dwg_record), \
+                 patch("app.api.v1.parse.ParseService") as mock_parse_service_cls:
+                mock_service = mock_parse_service_cls.return_value
+                mock_service.experimental_vision_regions = AsyncMock(return_value=payload)
+
+                response = client.post("/api/v1/parse/experimental/vision/regions", json={
+                    "file_id": "dwg-1",
+                })
+
+            assert response.status_code == 200
+            data = response.json()
+            assert data["provider"] == "heuristic-preview"
+            assert data["legend_regions"][0]["label"] == "固定挡烟垂壁"
+
+    def test_experimental_vision_classify_returns_three_groups(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            dxf_path = Path(tmpdir) / "drawing.dxf"
+            dxf_path.write_text("fake-dxf")
+
+            dwg_record = FileRecord(
+                file_id="dwg-1",
+                filename="drawing.dxf",
+                file_type="dwg",
+                file_path=str(dxf_path),
+                suffix=".dxf",
+                uploaded_at="2026-03-18T12:00:00",
+            )
+            payload = {
+                "file_id": "dwg-1",
+                "legend_name": "固定挡烟垂壁",
+                "enabled": True,
+                "provider": "heuristic-preview",
+                "model": "preview-v1",
+                "strategy": "vision_assisted_block",
+                "overview_image": "data:image/svg+xml;base64,ZmFrZQ==",
+                "legend_regions": [],
+                "confirmed_matches": [
+                    {
+                        "x": 120.0,
+                        "y": 240.0,
+                        "z": 0.0,
+                        "layer": "消防",
+                        "block_name": "SMOKE_WALL",
+                        "handle": "C1",
+                        "reason": "确认计入",
+                        "confidence": 0.81,
+                        "image_data": "data:image/svg+xml;base64,ZmFrZQ==",
+                    }
+                ],
+                "uncertain_matches": [
+                    {
+                        "x": 150.0,
+                        "y": 260.0,
+                        "z": 0.0,
+                        "layer": "消防",
+                        "block_name": "SMOKE_WALL",
+                        "handle": "U1",
+                        "reason": "需要人工复核",
+                        "confidence": 0.47,
+                        "image_data": "data:image/svg+xml;base64,ZmFrZQ==",
+                    }
+                ],
+                "excluded_matches": [
+                    {
+                        "x": 20.0,
+                        "y": 40.0,
+                        "z": 0.0,
+                        "layer": "说明",
+                        "block_name": "SMOKE_WALL",
+                        "handle": "E1",
+                        "reason": "图例样例区",
+                        "confidence": 0.93,
+                        "image_data": "data:image/svg+xml;base64,ZmFrZQ==",
+                    }
+                ],
+                "summary": {
+                    "confirmed_count": 1,
+                    "uncertain_count": 1,
+                    "excluded_count": 1,
+                },
+                "explanation": "实验识别说明",
+            }
+
+            with patch("app.api.v1.parse.get_uploaded_file", return_value=dwg_record), \
+                 patch("app.api.v1.parse.ParseService") as mock_parse_service_cls:
+                mock_service = mock_parse_service_cls.return_value
+                mock_service.experimental_vision_classify = AsyncMock(return_value=payload)
+
+                response = client.post("/api/v1/parse/experimental/vision/classify", json={
+                    "file_id": "dwg-1",
+                    "legend_name": "固定挡烟垂壁",
+                })
+
+            assert response.status_code == 200
+            data = response.json()
+            assert data["strategy"] == "vision_assisted_block"
+            assert data["summary"]["confirmed_count"] == 1
+            assert data["uncertain_matches"][0]["handle"] == "U1"
+            assert data["excluded_matches"][0]["reason"] == "图例样例区"

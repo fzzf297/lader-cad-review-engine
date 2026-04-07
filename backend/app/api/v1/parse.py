@@ -24,6 +24,10 @@ from app.models.parse_result import (
     LegendCountResponse,
     LegendDiscoveryResponse,
     DwgPreviewResponse,
+    ExperimentalVisionRegionRequest,
+    ExperimentalVisionRegionsResponse,
+    ExperimentalVisionClassifyRequest,
+    ExperimentalVisionClassifyResponse,
 )
 from app.services.parse_service import ParseService
 from app.services.dwg_translator import DwgContentTranslator, DwgParseVerifier
@@ -117,6 +121,57 @@ async def get_dwg_preview(file_id: str):
     except Exception as e:
         logger.error(f"图纸预览生成失败: {e}")
         raise HTTPException(500, f"图纸预览生成失败: {str(e)}")
+
+
+@router.post("/experimental/vision/regions", response_model=ExperimentalVisionRegionsResponse)
+async def get_experimental_vision_regions(request: ExperimentalVisionRegionRequest):
+    """
+    实验性视觉区域分析。
+
+    不影响正式统计链路，仅输出图例区、主图内容区和排除区候选。
+    """
+    file_info = get_uploaded_file(request.file_id, expected_type="dwg")
+    file_path = Path(file_info.file_path)
+    if not file_path.exists():
+        raise HTTPException(404, "文件路径无效")
+
+    parse_service = ParseService()
+
+    try:
+        result = await parse_service.experimental_vision_regions(
+            file_path=str(file_path),
+            file_id=request.file_id,
+        )
+        return ExperimentalVisionRegionsResponse(**result)
+    except Exception as e:
+        logger.error(f"实验视觉区域分析失败: {e}")
+        raise HTTPException(500, f"实验视觉区域分析失败: {str(e)}")
+
+
+@router.post("/experimental/vision/classify", response_model=ExperimentalVisionClassifyResponse)
+async def get_experimental_vision_classify(request: ExperimentalVisionClassifyRequest):
+    """
+    实验性视觉点位分类。
+
+    输出 confirmed / uncertain / excluded 三类点位，不替代正式统计结果。
+    """
+    file_info = get_uploaded_file(request.file_id, expected_type="dwg")
+    file_path = Path(file_info.file_path)
+    if not file_path.exists():
+        raise HTTPException(404, "文件路径无效")
+
+    parse_service = ParseService()
+
+    try:
+        result = await parse_service.experimental_vision_classify(
+            file_path=str(file_path),
+            file_id=request.file_id,
+            legend_name=request.legend_name,
+        )
+        return ExperimentalVisionClassifyResponse(**result)
+    except Exception as e:
+        logger.error(f"实验视觉点位分类失败: {e}")
+        raise HTTPException(500, f"实验视觉点位分类失败: {str(e)}")
 
 
 # ==================== 合同解析接口 ====================

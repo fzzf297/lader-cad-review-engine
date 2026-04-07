@@ -229,6 +229,61 @@ export interface LegendCountResponse {
   confidence: number
 }
 
+export interface ExperimentalVisionRegion {
+  region_id: string
+  label: string
+  min_x: number
+  max_x: number
+  min_y: number
+  max_y: number
+  confidence: number
+  reason: string
+  image_data: string
+}
+
+export interface ExperimentalVisionPoint {
+  x: number
+  y: number
+  z: number
+  layer: string
+  block_name: string
+  handle: string
+  reason: string
+  confidence: number
+  image_data: string
+}
+
+export interface ExperimentalVisionRegionsResponse {
+  file_id: string
+  enabled: boolean
+  provider: string
+  model: string
+  overview_image: string
+  legend_regions: ExperimentalVisionRegion[]
+  content_regions: ExperimentalVisionRegion[]
+  excluded_regions: ExperimentalVisionRegion[]
+}
+
+export interface ExperimentalVisionClassifyResponse {
+  file_id: string
+  legend_name: string
+  enabled: boolean
+  provider: string
+  model: string
+  strategy: string
+  overview_image: string
+  legend_regions: ExperimentalVisionRegion[]
+  confirmed_matches: ExperimentalVisionPoint[]
+  uncertain_matches: ExperimentalVisionPoint[]
+  excluded_matches: ExperimentalVisionPoint[]
+  summary: {
+    confirmed_count: number
+    uncertain_count: number
+    excluded_count: number
+  }
+  explanation: string
+}
+
 export interface DrawingPreviewEntity {
   type: string
   start?: { x: number; y: number }

@@ -473,6 +473,66 @@ class DwgPreviewResponse(BaseModel):
     entities: List[DwgPreviewEntityResponse]
 
 
+class ExperimentalVisionRegionRequest(BaseModel):
+    file_id: str
+
+
+class ExperimentalVisionClassifyRequest(BaseModel):
+    file_id: str
+    legend_name: str
+
+
+class ExperimentalVisionRegionResponse(BaseModel):
+    region_id: str
+    label: str
+    min_x: float
+    max_x: float
+    min_y: float
+    max_y: float
+    confidence: float
+    reason: str
+    image_data: str = ""
+
+
+class ExperimentalVisionPointResponse(BaseModel):
+    x: float
+    y: float
+    z: float = 0.0
+    layer: str = ""
+    block_name: str = ""
+    handle: str = ""
+    reason: str
+    confidence: float
+    image_data: str = ""
+
+
+class ExperimentalVisionRegionsResponse(BaseModel):
+    file_id: str
+    enabled: bool
+    provider: str
+    model: str
+    overview_image: str
+    legend_regions: List[ExperimentalVisionRegionResponse]
+    content_regions: List[ExperimentalVisionRegionResponse]
+    excluded_regions: List[ExperimentalVisionRegionResponse]
+
+
+class ExperimentalVisionClassifyResponse(BaseModel):
+    file_id: str
+    legend_name: str
+    enabled: bool
+    provider: str
+    model: str
+    strategy: str
+    overview_image: str
+    legend_regions: List[ExperimentalVisionRegionResponse]
+    confirmed_matches: List[ExperimentalVisionPointResponse]
+    uncertain_matches: List[ExperimentalVisionPointResponse]
+    excluded_matches: List[ExperimentalVisionPointResponse]
+    summary: Dict[str, int]
+    explanation: str
+
+
 # ==================== P2: 合同-图纸验证模型 ====================
 
 class ValidationMatchItem(BaseModel):

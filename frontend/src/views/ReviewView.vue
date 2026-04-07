@@ -9,6 +9,8 @@ import { uploadApi } from '@/api/upload'
 import { parseApi } from '@/api/parse'
 import type {
   DrawingPreviewResponse,
+  ExperimentalVisionClassifyResponse,
+  ExperimentalVisionRegionsResponse,
   LegendCountResponse,
   LegendDiscoveryItem,
   ReviewResponse,
@@ -19,6 +21,7 @@ const route = useRoute()
 const fileId = route.params.fileId as string
 const LARGE_FILE_THRESHOLD = 10 * 1024 * 1024
 const preferAsyncReview = !import.meta.env.DEV
+const visionExperimentEnabled = import.meta.env.DEV || import.meta.env.VITE_VISION_EXPERIMENT_ENABLED === 'true'
 
 const loading = ref(true)
 const reviewResult = ref<ReviewResponse | null>(null)
@@ -32,6 +35,11 @@ const activeLegendName = ref('')
 const legendDetailVisible = ref(false)
 const activeLegendHandle = ref('')
 const drawingPreview = ref<DrawingPreviewResponse | null>(null)
+const visionExperimentVisible = ref(false)
+const visionExperimentLoading = ref(false)
+const visionExperimentLegendName = ref('')
+const visionExperimentRegions = ref<ExperimentalVisionRegionsResponse | null>(null)
+const visionExperimentResult = ref<ExperimentalVisionClassifyResponse | null>(null)
 const legendViewMode = ref<'focus' | 'full'>('focus')
 const legendShowKeep = ref(true)
 const legendShowExclude = ref(true)
@@ -118,6 +126,34 @@ const openLegendDetail = (item: LegendDiscoveryItem) => {
   legendPanX.value = 0
   legendPanY.value = 0
   legendDetailVisible.value = true
+}
+
+const openVisionExperiment = async (item: LegendDiscoveryItem) => {
+  visionExperimentLegendName.value = item.normalized_name
+  visionExperimentVisible.value = true
+  visionExperimentLoading.value = true
+
+  try {
+    const [regions, classification] = await Promise.all([
+      parseApi.getExperimentalVisionRegions(fileId),
+      parseApi.classifyExperimentalVision(fileId, item.normalized_name)
+    ])
+    visionExperimentRegions.value = regions
+    visionExperimentResult.value = classification
+  } catch (error: any) {
+    visionExperimentRegions.value = null
+    visionExperimentResult.value = null
+    ElMessage.error(error.message || '实验识别失败')
+  } finally {
+    visionExperimentLoading.value = false
+  }
+}
+
+const closeVisionExperiment = () => {
+  visionExperimentVisible.value = false
+  visionExperimentLegendName.value = ''
+  visionExperimentRegions.value = null
+  visionExperimentResult.value = null
 }
 
 const activeLegendCount = computed(() => {
@@ -623,20 +659,158 @@ onBeforeUnmount(() => {
           </el-table-column>
           <el-table-column label="证据" width="100">
             <template #default="{ row }">
-              <el-button
-                link
-                type="primary"
-                :disabled="row.source === 'label_text_only' || !legendCounts[row.normalized_name]"
-                @click="openLegendDetail(row)"
-              >
-                查看明细
-              </el-button>
+              <div class="legend-action-cell">
+                <el-button
+                  link
+                  type="primary"
+                  :disabled="row.source === 'label_text_only' || !legendCounts[row.normalized_name]"
+                  @click="openLegendDetail(row)"
+                >
+                  查看明细
+                </el-button>
+                <el-button
+                  v-if="visionExperimentEnabled"
+                  link
+                  type="warning"
+                  @click="openVisionExperiment(row)"
+                >
+                  实验识别
+                </el-button>
+              </div>
             </template>
           </el-table-column>
         </el-table>
       </el-card>
 
     </template>
+
+    <el-dialog
+      v-model="visionExperimentVisible"
+      :title="visionExperimentLegendName ? `${visionExperimentLegendName} 实验识别` : '实验识别'"
+      width="1080px"
+      @closed="closeVisionExperiment"
+    >
+      <div v-loading="visionExperimentLoading" class="vision-experiment-dialog">
+        <el-alert
+          type="warning"
+          :closable="false"
+          show-icon
+          class="vision-experiment-alert"
+          title="实验链路只用于可行性验证，不替代当前正式统计结果。"
+        />
+
+        <template v-if="visionExperimentResult">
+          <el-row :gutter="16" class="legend-detail-stats">
+            <el-col :span="8">
+              <div class="stat-box">
+                <div class="stat-value">{{ visionExperimentResult.summary.confirmed_count }}</div>
+                <div class="stat-label">确认计入</div>
+              </div>
+            </el-col>
+            <el-col :span="8">
+              <div class="stat-box">
+                <div class="stat-value">{{ visionExperimentResult.summary.uncertain_count }}</div>
+                <div class="stat-label">不确定</div>
+              </div>
+            </el-col>
+            <el-col :span="8">
+              <div class="stat-box">
+                <div class="stat-value">{{ visionExperimentResult.summary.excluded_count }}</div>
+                <div class="stat-label">确认排除</div>
+              </div>
+            </el-col>
+          </el-row>
+
+          <el-descriptions :column="3" border class="vision-meta">
+            <el-descriptions-item label="Provider">{{ visionExperimentResult.provider }}</el-descriptions-item>
+            <el-descriptions-item label="Model">{{ visionExperimentResult.model }}</el-descriptions-item>
+            <el-descriptions-item label="Strategy">{{ visionExperimentResult.strategy }}</el-descriptions-item>
+          </el-descriptions>
+
+          <el-alert
+            type="info"
+            :closable="false"
+            show-icon
+            class="legend-detail-alert"
+          >
+            <template #title>
+              {{ visionExperimentResult.explanation }}
+            </template>
+          </el-alert>
+
+          <div class="section-title">整图与图例候选</div>
+          <div class="vision-overview-grid">
+            <img
+              v-if="visionExperimentRegions?.overview_image"
+              :src="visionExperimentRegions.overview_image"
+              alt="实验整图预览"
+              class="vision-overview-image"
+            >
+            <img
+              v-else-if="visionExperimentResult.overview_image"
+              :src="visionExperimentResult.overview_image"
+              alt="实验整图预览"
+              class="vision-overview-image"
+            >
+
+            <div class="vision-region-column">
+              <div class="vision-region-panel">
+                <div class="vision-region-panel-title">图例候选区</div>
+                <div v-if="visionExperimentRegions?.legend_regions?.length" class="vision-region-list">
+                  <div v-for="region in visionExperimentRegions.legend_regions" :key="region.region_id" class="vision-region-card">
+                    <img :src="region.image_data" :alt="region.label" class="vision-region-image">
+                    <div class="vision-region-meta">
+                      <strong>{{ region.label }}</strong>
+                      <span>置信度 {{ Math.round(region.confidence * 100) }}%</span>
+                      <span>{{ region.reason }}</span>
+                    </div>
+                  </div>
+                </div>
+                <el-empty v-else description="暂无图例候选区" />
+              </div>
+            </div>
+          </div>
+
+          <div class="section-title">确认计入</div>
+          <el-table :data="visionExperimentResult.confirmed_matches" stripe size="small" max-height="220">
+            <el-table-column label="坐标" min-width="180">
+              <template #default="{ row }">({{ row.x.toFixed(1) }}, {{ row.y.toFixed(1) }})</template>
+            </el-table-column>
+            <el-table-column prop="layer" label="图层" width="120" />
+            <el-table-column label="置信度" width="100">
+              <template #default="{ row }">{{ Math.round(row.confidence * 100) }}%</template>
+            </el-table-column>
+            <el-table-column prop="reason" label="依据" min-width="240" />
+          </el-table>
+
+          <div class="section-title">不确定</div>
+          <el-table :data="visionExperimentResult.uncertain_matches" stripe size="small" max-height="220">
+            <el-table-column label="坐标" min-width="180">
+              <template #default="{ row }">({{ row.x.toFixed(1) }}, {{ row.y.toFixed(1) }})</template>
+            </el-table-column>
+            <el-table-column prop="layer" label="图层" width="120" />
+            <el-table-column label="置信度" width="100">
+              <template #default="{ row }">{{ Math.round(row.confidence * 100) }}%</template>
+            </el-table-column>
+            <el-table-column prop="reason" label="依据" min-width="240" />
+          </el-table>
+
+          <div class="section-title">确认排除</div>
+          <el-table :data="visionExperimentResult.excluded_matches" stripe size="small" max-height="220">
+            <el-table-column label="坐标" min-width="180">
+              <template #default="{ row }">({{ row.x.toFixed(1) }}, {{ row.y.toFixed(1) }})</template>
+            </el-table-column>
+            <el-table-column prop="layer" label="图层" width="120" />
+            <el-table-column label="置信度" width="100">
+              <template #default="{ row }">{{ Math.round(row.confidence * 100) }}%</template>
+            </el-table-column>
+            <el-table-column prop="reason" label="依据" min-width="240" />
+          </el-table>
+        </template>
+
+        <el-empty v-else description="实验结果尚未生成" />
+      </div>
+    </el-dialog>
 
     <el-dialog
       v-model="legendDetailVisible"
@@ -1262,6 +1436,13 @@ onBeforeUnmount(() => {
   gap: 12px;
 }
 
+.legend-action-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+}
+
 .legend-count-placeholder {
   color: #909399;
 }
@@ -1312,6 +1493,89 @@ onBeforeUnmount(() => {
   margin: 20px 0 12px 0;
   padding-left: 8px;
   border-left: 4px solid #409eff;
+}
+
+.vision-experiment-dialog {
+  min-height: 320px;
+}
+
+.vision-experiment-alert {
+  margin-bottom: 16px;
+}
+
+.vision-meta {
+  margin-bottom: 16px;
+}
+
+.vision-overview-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) minmax(320px, 0.9fr);
+  gap: 16px;
+  align-items: start;
+}
+
+.vision-overview-image {
+  width: 100%;
+  min-height: 260px;
+  max-height: 520px;
+  object-fit: contain;
+  border-radius: 12px;
+  border: 1px solid #ebeef5;
+  background: #fcfcfd;
+}
+
+.vision-region-column {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.vision-region-panel {
+  border: 1px solid #ebeef5;
+  border-radius: 12px;
+  padding: 12px;
+  background: #fcfcfd;
+}
+
+.vision-region-panel-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #303133;
+  margin-bottom: 10px;
+}
+
+.vision-region-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-height: 520px;
+  overflow-y: auto;
+}
+
+.vision-region-card {
+  border: 1px solid #e4e7ed;
+  border-radius: 10px;
+  padding: 10px;
+  background: #ffffff;
+}
+
+.vision-region-image {
+  display: block;
+  width: 100%;
+  max-height: 180px;
+  object-fit: contain;
+  border-radius: 8px;
+  background: #f8fafc;
+  margin-bottom: 8px;
+}
+
+.vision-region-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  color: #606266;
+  font-size: 12px;
+  line-height: 1.5;
 }
 
 .subsection-title {
