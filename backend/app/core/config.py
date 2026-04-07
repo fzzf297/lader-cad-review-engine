@@ -27,6 +27,7 @@ class Settings(BaseSettings):
     # 千问 API 配置
     QWEN_API_KEY: str = ""
     QWEN_MODEL: str = "qwen-plus"
+    QWEN_VISION_MODEL: str = "qwen3-vl-plus"
     QWEN_BASE_URL: str = "https://dashscope.aliyuncs.com/compatible-mode/v1"
     LLM_ENABLED: bool = False
 
@@ -34,6 +35,7 @@ class Settings(BaseSettings):
     VISION_EXPERIMENT_ENABLED: bool = False
     VISION_EXPERIMENT_PROVIDER: str = "heuristic-preview"
     VISION_EXPERIMENT_MODEL: str = "preview-v1"
+    VISION_EXPERIMENT_MAX_MODEL_CANDIDATES: int = 24
 
     class Config:
         env_file = ".env"

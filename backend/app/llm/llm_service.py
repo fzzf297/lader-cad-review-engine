@@ -132,6 +132,33 @@ LEGEND_POINT_REVIEW_PROMPT = """
 {payload}
 """
 
+VISION_CANDIDATE_REVIEW_PROMPT = """
+你在做 CAD 图例实验识别复核。你的任务不是直接统计整张图，只裁决一个候选点。
+
+目标图例名称: {legend_name}
+启发式初判: {heuristic_bucket}
+候选点上下文:
+{context}
+
+你会看到这些图片：
+1. 整图预览
+2. 图例候选区局部图
+3. 单个候选点局部图（红点为当前候选）
+
+请只输出 JSON：
+{{"classification":"confirmed|uncertain|excluded","confidence":0.0,"reason":"一句简短中文说明"}}
+
+判定规则：
+- confirmed：高度像主图真实设备，且没有明显落在图例/说明/标题栏区域
+- excluded：明显属于图例样例、标题栏、说明带或注释区
+- uncertain：拿不准，或者更像通用图块/模糊候选
+
+要求：
+- 优先保守，不要把不确定点误报为 confirmed
+- reason 只写一句话，不要展开推理
+- classification 只能是 confirmed / uncertain / excluded
+"""
+
 # 合同分析提示词 - 只提取"发包人供应材料设备一览表"
 MATERIAL_SUPPLY_LIST_PROMPT = """
 ## 任务
@@ -633,6 +660,80 @@ class LegendPointReviewService:
             return {"decision": "exclude", "confidence": 0.0, "reason": f"LLM 调用失败: {exc}"}
 
 
+class VisionCandidateReviewService:
+    """千问视觉候选点复核服务。"""
+
+    def __init__(
+        self,
+        api_key: str,
+        model: str = "qwen3-vl-plus",
+        base_url: str = "https://dashscope.aliyuncs.com/compatible-mode/v1",
+    ):
+        self.api_key = api_key
+        self.model = model
+        self.base_url = base_url
+
+    async def review_candidate(
+        self,
+        *,
+        legend_name: str,
+        heuristic_bucket: str,
+        overview_image: str,
+        legend_region_image: Optional[str],
+        candidate_image: str,
+        context: Dict[str, Any],
+    ) -> Dict[str, Any]:
+        try:
+            from openai import AsyncOpenAI
+        except ImportError:
+            logger.warning("openai 依赖不可用，视觉候选复核回退到启发式模式")
+            return {"classification": "uncertain", "confidence": 0.0, "reason": "视觉模型依赖不可用"}
+
+        client = AsyncOpenAI(api_key=self.api_key, base_url=self.base_url, timeout=40, max_retries=0)
+        prompt = VISION_CANDIDATE_REVIEW_PROMPT.format(
+            legend_name=legend_name,
+            heuristic_bucket=heuristic_bucket,
+            context=json.dumps(context, ensure_ascii=False, indent=2),
+        )
+        content: List[Dict[str, Any]] = [
+            {"type": "text", "text": prompt},
+            {"type": "image_url", "image_url": {"url": overview_image}},
+        ]
+        if legend_region_image:
+            content.append({"type": "image_url", "image_url": {"url": legend_region_image}})
+        content.append({"type": "image_url", "image_url": {"url": candidate_image}})
+
+        try:
+            response = await client.chat.completions.create(
+                model=self.model,
+                messages=[
+                    {"role": "system", "content": "你是谨慎的 CAD 多模态复核助手，只输出 JSON。"},
+                    {"role": "user", "content": content},
+                ],
+                temperature=0,
+                max_tokens=180,
+                response_format={"type": "json_object"},
+            )
+            raw_content = response.choices[0].message.content or "{}"
+            data = json.loads(raw_content)
+            classification = data.get("classification")
+            if classification not in {"confirmed", "uncertain", "excluded"}:
+                return {"classification": "uncertain", "confidence": 0.0, "reason": "视觉模型输出无效"}
+            try:
+                confidence = float(data.get("confidence", 0.0))
+            except (TypeError, ValueError):
+                confidence = 0.0
+            reason = str(data.get("reason", "")).strip() or "视觉模型未提供原因"
+            return {
+                "classification": classification,
+                "confidence": max(0.0, min(1.0, confidence)),
+                "reason": reason,
+            }
+        except Exception as exc:
+            logger.warning("视觉候选复核失败，回退到启发式模式: %s", exc)
+            return {"classification": "uncertain", "confidence": 0.0, "reason": f"视觉模型调用失败: {exc}"}
+
+
 def get_legend_query_expansion_service() -> Optional[LegendQueryExpansionService]:
     if not settings.LLM_ENABLED or not settings.QWEN_API_KEY:
         return None
@@ -649,5 +750,15 @@ def get_legend_point_review_service() -> Optional[LegendPointReviewService]:
     return LegendPointReviewService(
         api_key=settings.QWEN_API_KEY,
         model=settings.QWEN_MODEL,
+        base_url=settings.QWEN_BASE_URL,
+    )
+
+
+def get_vision_candidate_review_service() -> Optional[VisionCandidateReviewService]:
+    if not settings.LLM_ENABLED or not settings.QWEN_API_KEY:
+        return None
+    return VisionCandidateReviewService(
+        api_key=settings.QWEN_API_KEY,
+        model=settings.QWEN_VISION_MODEL,
         base_url=settings.QWEN_BASE_URL,
     )
